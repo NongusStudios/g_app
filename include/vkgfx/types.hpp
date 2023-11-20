@@ -8,8 +8,5 @@
 #include <GLFW/glfw3.h>
 
 namespace g_app {
-    enum class DisplayMode {
-        FIFO,
-        VSYNC,
-    };
+
 }

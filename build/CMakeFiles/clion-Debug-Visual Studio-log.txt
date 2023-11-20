@@ -1,8 +1,0 @@
-C:\Users\jandr\AppData\Local\Programs\CLion\bin\cmake\win\x64\bin\cmake.exe -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=C:/Users/jandr/AppData/Local/Programs/CLion/bin/ninja/win/x64/ninja.exe -G Ninja -S F:\g_app -B F:\g_app\build
--- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE) 
--- Including Win32 support
--- Build spdlog: 1.12.0
--- Build type: Debug
--- Configuring done (0.1s)
--- Generating done (0.1s)
--- Build files have been written to: F:/g_app/build

@@ -13,21 +13,23 @@
 #include <functional>
 #include <stdexcept>
 #include <cassert>
+#include <algorithm>
 
 #include "types.hpp"
 #include "window.hpp"
-#include "vkgfx/renderer.hpp"
+#include "vkgfx/all.hpp"
 
 
 namespace g_app {
     struct Time {
+        static constexpr double MAX_DELTA = 0.032f;
         double elapsed = 0.0;
         float  elapsedf = 0.0f;
         double delta = 0.0;
         float  deltaf = 0.0f;
 
         void update(double current_time){
-            delta = current_time - elapsed;
+            delta = std::clamp(current_time - elapsed, 0.0, MAX_DELTA);
             elapsed = current_time;
             elapsedf = static_cast<float>(elapsed);
             deltaf = static_cast<float>(delta);
@@ -51,7 +53,7 @@ namespace g_app {
             return m_renderer;
         }
 
-        void main_loop(std::function<void()> f);
+        void main_loop(std::function<void(const Time &)> f);
     private:
         struct Config {
             Extent2D<uint32_t> window_extent   = {800, 600}; // Size of the window in pixels
@@ -116,9 +118,9 @@ namespace g_app {
         App init() {
             try {
                 return App{m_config};
-            } catch(const std::runtime_error& e){
+            } catch(const std::runtime_error& e) {
                 spdlog::error(e.what());
-                std::abort();
+                std::exit(EXIT_FAILURE);
             }
         }
     private:

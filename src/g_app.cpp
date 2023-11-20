@@ -13,15 +13,15 @@ namespace g_app {
                  config.primary_monitor,
                  config.choose_monitor
         },
-        m_renderer{config.renderer_init.init(m_window.glfw_window())},
+        m_renderer{config.renderer_init.init(m_window.glfw_window())}
     {
 
     }
-    void App::main_loop(std::function<void()> f){
+    void App::main_loop(std::function<void(const Time &)> f){
         while(m_window.is_open()){
             auto events = m_window.poll_events();
             m_time.update(glfwGetTime());
-            f();
+            f(m_time);
         }
     }
 }
