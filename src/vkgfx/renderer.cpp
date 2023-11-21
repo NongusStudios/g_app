@@ -389,7 +389,7 @@ namespace g_app {
 
     VkSurfaceFormatKHR select_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats) {
         for(const auto& format : available_formats){
-            if(format.format == VK_FORMAT_B8G8R8A8_SNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            if(format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return format;
             }
         }
@@ -637,13 +637,22 @@ namespace g_app {
         }
     }
 
-    void VulkanRenderer::acquire_next_swapchain_image() {
+    bool VulkanRenderer::acquire_next_swapchain_image() {
         vkWaitForFences(self->device, 1, &self->in_flight_fences[self->current_frame], VK_TRUE, UINT64_MAX);
-        vkResetFences(self->device, 1, &self->in_flight_fences[self->current_frame]);
 
-        vkAcquireNextImageKHR(self->device, self->swapchain.swapchain, UINT64_MAX,
+        VkResult result = vkAcquireNextImageKHR(self->device, self->swapchain.swapchain, UINT64_MAX,
                               self->image_available_semaphores[self->current_frame], VK_NULL_HANDLE, &self->current_image);
 
+        if(result == VK_ERROR_OUT_OF_DATE_KHR){
+            recreate_swapchain();
+            return false;
+        } else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR){
+            throw std::runtime_error("Failed to acquire the next swapchain image!");
+        }
+
+        vkResetFences(self->device, 1, &self->in_flight_fences[self->current_frame]);
+
+        return true;
     }
 
     void VulkanRenderer::begin_default_render_pass(VkCommandBuffer cmd, float r, float g, float b, float a) {
@@ -687,7 +696,12 @@ namespace g_app {
         present_info.pSwapchains = &self->swapchain.swapchain;
         present_info.pImageIndices = &current;
 
-        vkQueuePresentKHR(get_queue(Queue::GRAPHICS), &present_info);
+        VkResult result = vkQueuePresentKHR(get_queue(Queue::GRAPHICS), &present_info);
+        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR){
+            recreate_swapchain();
+        } else if(result != VK_SUCCESS){
+            throw std::runtime_error("Failed to present a swapchain image!");
+        }
 
         self->current_frame = (self->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
@@ -731,5 +745,21 @@ namespace g_app {
                     std::format("Failed to create the descriptor pool! result = {}",
                                 static_cast<uint32_t>(result)));
         }
+    }
+
+    void VulkanRenderer::recreate_swapchain() {
+        int width = 0, height = 0;
+        glfwGetFramebufferSize(self->window, &width, &height);
+        while (width == 0 || height == 0) {
+            glfwGetFramebufferSize(self->window, &width, &height);
+            glfwWaitEvents();
+        }
+
+        device_wait_idle();
+
+        Swapchain old_swapchain = self->swapchain;
+        init_swapchain(old_swapchain.swapchain);
+        init_framebuffers();
+        old_swapchain.destroy(self->device, self->allocator);
     }
 } // g_app

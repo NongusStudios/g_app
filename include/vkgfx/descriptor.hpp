@@ -4,7 +4,7 @@
 #pragma once
 
 #include "renderer.hpp"
-
+#include "image.hpp"
 #include "buffer.hpp"
 
 namespace g_app {
@@ -83,52 +83,18 @@ namespace g_app {
     public:
         DescriptorSet() = default;
 
-        std::vector<VkDescriptorSet> vk_descriptor_sets() const { return self->sets; }
+        VkDescriptorSet vk_descriptor_set() const { return self->set; }
 
-        void write_buffer(const std::vector<VkDescriptorBufferInfo>& infos, uint32_t binding, VkDescriptorType type){
-            assert(infos.size() == self->sets.size());
-
-            std::vector<VkWriteDescriptorSet> writes = {};
-            writes.reserve(self->sets.size());
-
-            uint32_t i = 0;
-            for(auto set : self->sets) {
-                VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
-                write.dstSet = set;
-                write.dstBinding = binding;
-                write.dstArrayElement = 0;
-                write.descriptorType = type;
-                write.descriptorCount = 1;
-                write.pBufferInfo = &infos[i];
-
-                writes.push_back(write);
-
-                i++;
-            }
-
-            vkUpdateDescriptorSets(
-                    self->renderer.inner()->device, writes.size(), writes.data(),
-                    0, nullptr);
-        }
     private:
-        struct Config {
-            VkDescriptorPool pool = VK_NULL_HANDLE;
-            DescriptorSetLayout layout;
-            uint32_t set_count = 1;
-
-            std::string label = "unnamed descriptor set";
-        };
-
         struct Inner {
             VulkanRenderer renderer;
-            VkDescriptorPool pool = VK_NULL_HANDLE;
-            std::vector<VkDescriptorSet> sets = {};
+            VkDescriptorSet set = VK_NULL_HANDLE;
             std::string label;
         };
 
         std::shared_ptr<Inner> self;
 
-        DescriptorSet(VulkanRenderer renderer, const Config& config);
+        DescriptorSet(const VulkanRenderer& renderer, VkDescriptorSet set, const std::string& label);
 
         friend class DescriptorPool;
     };
@@ -139,13 +105,48 @@ namespace g_app {
 
         VkDescriptorPool vk_descriptor_pool() const { return self->pool; }
 
-        DescriptorSet allocate_set(const DescriptorSetLayout& layout, uint32_t set_count){
+        DescriptorSet allocate_set(const DescriptorSetLayout& layout){
             try {
-                return {self->renderer, {self->pool, layout, set_count, std::format("Descriptor Set: pool = {}", self->label)} };
+                return allocate_sets({layout})[0];
             } catch(const std::runtime_error& e) {
                 spdlog::error(e.what());
                 std::exit(EXIT_FAILURE);
             }
+        }
+
+        std::vector<DescriptorSet> allocate_sets(const std::vector<DescriptorSetLayout>& layouts){
+            auto inner = self->renderer.inner();
+
+            std::vector<VkDescriptorSetLayout> vk_layouts = {};
+
+            vk_layouts.reserve(layouts.size());
+            for(const auto& layout : layouts){
+                vk_layouts.push_back(layout.vk_descriptor_set_layout());
+            }
+
+            VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+            alloc_info.descriptorPool = self->pool;
+            alloc_info.descriptorSetCount = vk_layouts.size();
+            alloc_info.pSetLayouts = vk_layouts.data();
+
+            std::vector<VkDescriptorSet> vk_sets(vk_layouts.size());
+
+            VkResult result = VK_SUCCESS;
+            if((result = vkAllocateDescriptorSets(inner->device, &alloc_info, vk_sets.data())) != VK_SUCCESS){
+                throw std::runtime_error(
+                        std::format(
+                                "Failed to create a descriptor set layout! label = {}, result = {}", self->label, static_cast<uint32_t>(result)
+                        )
+                );
+            }
+
+            std::vector<DescriptorSet> sets;
+            sets.reserve(vk_sets.size());
+            for(auto set : vk_sets){
+                sets.push_back({self->renderer, set, std::format("Descriptor Set: pool = {}", self->label)});
+            }
+
+            return sets;
         }
     private:
         struct Config {
@@ -206,5 +207,80 @@ namespace g_app {
         }
     private:
         DescriptorPool::Config m_config = {};
+    };
+
+    class DescriptorWriter {
+    public:
+        DescriptorWriter() = default;
+
+        template<typename T>
+        DescriptorWriter& write_buffer(const DescriptorSet& dst, uint32_t binding, VkDescriptorType type,
+                                       const Buffer<T>& buffer, VkDeviceSize offset=0){
+            m_buffer_infos.push_back(std::make_unique<VkDescriptorBufferInfo>());
+            auto& info = m_buffer_infos[m_buffer_infos.size()-1];
+            info->buffer = buffer.vk_buffer();
+            info->offset = offset;
+            info->range = buffer.size() * sizeof(T);
+
+            VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+            write.dstSet = dst.vk_descriptor_set();
+            write.dstBinding = binding;
+            write.dstArrayElement = 0;
+            write.descriptorType = type;
+            write.descriptorCount = 1;
+            write.pBufferInfo = info.get();
+
+            m_writes.push_back(write);
+
+            return *this;
+        }
+
+        DescriptorWriter& write_image(
+                const DescriptorSet& dst, uint32_t binding, VkDescriptorType type,
+                const ImageView& image_view, const Sampler& sampler, VkImageLayout layout){
+            m_image_infos.push_back(std::make_unique<VkDescriptorImageInfo>());
+            auto& info = m_image_infos[m_image_infos.size()-1];
+            info->imageView = image_view.vk_image_view();
+            info->sampler = sampler.vk_sampler();
+            info->imageLayout = layout;
+
+            VkWriteDescriptorSet write = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+            write.dstSet = dst.vk_descriptor_set();
+            write.dstBinding = binding;
+            write.dstArrayElement = 0;
+            write.descriptorType = type;
+            write.descriptorCount = 1;
+            write.pImageInfo = info.get();
+
+            m_writes.push_back(write);
+
+            return *this;
+        }
+
+        DescriptorWriter& copy_descriptor(const DescriptorSet& dst, uint32_t dst_binding, const DescriptorSet& src, uint32_t src_binding){
+            VkCopyDescriptorSet copy = {VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET};
+            copy.dstSet = dst.vk_descriptor_set();
+            copy.srcSet = src.vk_descriptor_set();
+            copy.dstBinding = dst_binding;
+            copy.dstArrayElement = 0;
+            copy.srcBinding = src_binding;
+            copy.srcArrayElement = 0;
+            copy.descriptorCount = 1;
+
+            m_copies.push_back(copy);
+
+            return *this;
+        }
+
+        void commit_writes(VulkanRenderer renderer){
+            vkUpdateDescriptorSets(
+                    renderer.inner()->device, m_writes.size(), m_writes.data(),
+                    m_copies.size(), m_copies.data());
+        }
+    private:
+        std::vector<std::unique_ptr<VkDescriptorBufferInfo>> m_buffer_infos = {};
+        std::vector<std::unique_ptr<VkDescriptorImageInfo>> m_image_infos = {};
+        std::vector<VkWriteDescriptorSet> m_writes = {};
+        std::vector<VkCopyDescriptorSet> m_copies = {};
     };
 }

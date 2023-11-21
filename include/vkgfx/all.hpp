@@ -10,3 +10,4 @@
 #include "image.hpp"
 #include "render_pass.hpp"
 #include "descriptor.hpp"
+#include "texture.hpp"

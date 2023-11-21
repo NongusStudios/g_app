@@ -6,6 +6,10 @@
 
 #include "renderer.hpp"
 
+#include <format>
+
+#include <stb_image.h>
+
 namespace g_app {
     class VulkanRenderer;
 
@@ -20,6 +24,7 @@ namespace g_app {
         VkFormat format() const { return self->format; }
         uint32_t mip_levels() const { return self->mip_levels; }
         uint32_t layer_count() const { return self->layer_count; }
+        VkExtent3D extent() const { return self->extent; }
 
         VkImage vk_image() const { return self->image; }
         VmaAllocation vma_allocation() const { return self->allocation; }
@@ -43,6 +48,7 @@ namespace g_app {
             VulkanRenderer renderer;
             VkImage image = VK_NULL_HANDLE;
             VmaAllocation allocation = VK_NULL_HANDLE;
+            VkExtent3D extent = {};
             VkFormat format;
             uint32_t mip_levels = 1;
             uint32_t layer_count = 1;
@@ -201,5 +207,106 @@ namespace g_app {
         }
     private:
         ImageView::Config m_config = {};
+    };
+
+    class SamplerInit;
+    class Sampler {
+    public:
+        Sampler() = default;
+
+        VkSampler vk_sampler() const { return self->sampler; }
+    private:
+        struct Config {
+            VkFilter mag_filter = VK_FILTER_LINEAR;
+            VkFilter min_filter = VK_FILTER_LINEAR;
+            VkSamplerMipmapMode mipmap_mode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            VkSamplerAddressMode address_u = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            VkSamplerAddressMode address_v = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            VkSamplerAddressMode address_w = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            VkBorderColor border_color = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+            bool anisotropy_enable = false;
+            float max_anisotropy = 1.0f;
+            bool compare_enable = false;
+            VkCompareOp compare_op = VK_COMPARE_OP_ALWAYS;
+            float mip_lod_bias = 0.0f;
+            float min_lod = 0.0f;
+            float max_lod = 0.0f;
+            std::string label = "unnamed sampler";
+        };
+
+        struct Inner {
+            VulkanRenderer renderer;
+            VkSampler sampler = VK_NULL_HANDLE;
+            std::string label;
+
+            ~Inner(){
+                vkDestroySampler(renderer.inner()->device, sampler, nullptr);
+            }
+        };
+
+        std::shared_ptr<Inner> self;
+
+        Sampler(const VulkanRenderer& renderer, const Config& config);
+
+        friend class SamplerInit;
+    };
+
+    class SamplerInit {
+    public:
+        SamplerInit() = default;
+
+        SamplerInit& set_label(const std::string& label){
+            m_config.label = label;
+            return *this;
+        }
+        SamplerInit& set_filter(VkFilter mag, VkFilter min){
+            m_config.mag_filter = mag;
+            m_config.min_filter = min;
+            return *this;
+        }
+        SamplerInit& set_mipmap_mode(VkSamplerMipmapMode mipmap_mode){
+            m_config.mipmap_mode = mipmap_mode;
+            return *this;
+        }
+        SamplerInit& set_address_modes(VkSamplerAddressMode U, VkSamplerAddressMode V, VkSamplerAddressMode W){
+            m_config.address_u = U;
+            m_config.address_v = V;
+            m_config.address_w = W;
+            return *this;
+        }
+        SamplerInit& set_border_color(VkBorderColor border_color){
+            m_config.border_color = border_color;
+            return *this;
+        }
+        SamplerInit& enable_anisotropy(float max_anisotropy){
+            m_config.anisotropy_enable = true;
+            m_config.max_anisotropy = max_anisotropy;
+            return *this;
+        }
+        SamplerInit& disable_anisotropy(){
+            m_config.anisotropy_enable = false;
+            return *this;
+        }
+        SamplerInit& enable_compare_op(VkCompareOp op){
+            m_config.compare_enable = true;
+            m_config.compare_op = op;
+            return *this;
+        }
+        SamplerInit& set_mip_options(float mip_lod_bias, float min_lod, float max_lod){
+            m_config.mip_lod_bias = mip_lod_bias;
+            m_config.min_lod = min_lod;
+            m_config.max_lod = max_lod;
+            return *this;
+        }
+        Sampler init(VulkanRenderer renderer){
+            try {
+                return {renderer, m_config};
+            } catch(const std::runtime_error& e) {
+                spdlog::error(e.what());
+                std::exit(EXIT_FAILURE);
+            }
+        }
+    private:
+        Sampler::Config m_config = {};
     };
 }

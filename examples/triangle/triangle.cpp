@@ -99,6 +99,8 @@ int main(){
 
         draw_ui(offset[0], offset[1]);
 
+        if(!app.renderer().acquire_next_swapchain_image()) return;
+
         command_buffers[app.renderer().current_frame()]
             .begin()
 

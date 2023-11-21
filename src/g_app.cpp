@@ -18,10 +18,15 @@ namespace g_app {
 
     }
     void App::main_loop(std::function<void(const Time &)> f){
-        while(m_window.is_open()){
-            auto events = m_window.poll_events();
-            m_time.update(glfwGetTime());
-            f(m_time);
+        try {
+            while (m_window.is_open()) {
+                auto events = m_window.poll_events();
+                m_time.update(glfwGetTime());
+                f(m_time);
+            }
+        } catch(const std::runtime_error& e) {
+            spdlog::error(e.what());
+            std::exit(EXIT_FAILURE);
         }
     }
 }

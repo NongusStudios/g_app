@@ -45,9 +45,7 @@ int main(){
             .init(app.renderer());
 
     std::vector<Buffer<TransformData>> uniform_buffers = {};
-    std::vector<VkDescriptorBufferInfo> uniform_buffers_info = {};
     uniform_buffers.reserve(VulkanRenderer::MAX_FRAMES_IN_FLIGHT);
-    uniform_buffers_info.reserve(VulkanRenderer::MAX_FRAMES_IN_FLIGHT);
 
     for(uint32_t i = 0; i < VulkanRenderer::MAX_FRAMES_IN_FLIGHT; i++){
         uniform_buffers.push_back(BufferInit<TransformData>()
@@ -57,13 +55,19 @@ int main(){
             .set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
             .init(app.renderer())
         );
-        uniform_buffers_info.push_back(uniform_buffers[i].descriptor_info());
     }
 
-    auto descriptor_set = descriptor_pool.allocate_set(
-        descriptor_set_layout, VulkanRenderer::MAX_FRAMES_IN_FLIGHT
+    auto descriptor_sets = descriptor_pool.allocate_sets(
+            {VulkanRenderer::MAX_FRAMES_IN_FLIGHT, descriptor_set_layout}
     );
-    descriptor_set.write_buffer(uniform_buffers_info, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+    auto set_writer = DescriptorWriter();
+    uint32_t i = 0;
+    for(const auto& set : descriptor_sets){
+        set_writer.write_buffer(set, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffers[i]);
+        i++;
+    }
+    set_writer.commit_writes(app.renderer());
 
     const uint32_t vertex_count = 8;
     glm::vec3 cube_color_a = {0.4f, 1.0f, 0.2f};
@@ -150,8 +154,8 @@ int main(){
             .init(app.renderer());
 
     CommandBuffer cmd[VulkanRenderer::MAX_FRAMES_IN_FLIGHT];
-    for(auto & i : cmd){
-        i = CommandBuffer(app.renderer());
+    for(auto & c : cmd){
+        c = CommandBuffer(app.renderer());
     }
 
 
@@ -159,9 +163,6 @@ int main(){
     glm::vec3 rotation = {0.0f, 0.2f, 0.0f};
     float scale = 1.0f;
     TransformData transform = {};
-    auto window_extent = app.window().extent();
-
-    transform.projection = glm::perspective(45.0f, float(window_extent.width)/float(window_extent.height), 0.1f, 100.0f);
 
     app.main_loop([&](const Time& time){
         ImGui_ImplVulkan_NewFrame();
@@ -179,6 +180,9 @@ int main(){
         ImGui::SliderFloat("Scale", &scale, 0.1f, 10.0f);
         ImGui::End();
 
+        auto window_extent = app.window().extent();
+        transform.projection = glm::perspective(45.0f, float(window_extent.width)/float(window_extent.height), 0.1f, 100.0f);
+
         auto model = glm::mat4(1.0f);
         model = glm::translate(model, position);
         model = glm::rotate(model, rotation.y, {0.0f, 1.0f, 0.0f});
@@ -192,6 +196,8 @@ int main(){
         *data = transform;
         uniform_buffers[app.renderer().current_frame()].unmap();
 
+        if(!app.renderer().acquire_next_swapchain_image()) return;
+
         cmd[app.renderer().current_frame()]
             .begin()
             .begin_default_render_pass(0.2f, 0.2f, 0.2f, 1.0f)
@@ -199,7 +205,7 @@ int main(){
             .bind_vertex_buffer(vertex_buffer)
             .bind_index_buffer(index_buffer, VK_INDEX_TYPE_UINT32)
             .bind_descriptor_sets(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                  {descriptor_set}, {app.renderer().current_frame()}
+                                  {descriptor_sets[app.renderer().current_frame()]}
             ).draw_indexed(index_count, 1)
             .draw_imgui()
             .end_render_pass()

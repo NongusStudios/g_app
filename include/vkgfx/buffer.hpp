@@ -29,14 +29,6 @@ namespace g_app {
         VkBuffer vk_buffer() const { return self->buffer; }
         VmaAllocation vma_allocation() const { return self->allocation; }
         size_t size() const { return self->size; }
-
-        VkDescriptorBufferInfo descriptor_info(VkDeviceSize offset=0) const {
-            VkDescriptorBufferInfo info = {};
-            info.buffer = self->buffer;
-            info.offset = offset;
-            info.range = self->size * sizeof(T) - offset * sizeof(T);
-            return info;
-        }
     private:
         struct Config {
             VkBufferUsageFlags usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;

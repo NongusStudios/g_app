@@ -118,7 +118,7 @@ namespace g_app {
         VulkanRenderer(const VulkanRenderer&) = default;
         VulkanRenderer& operator = (const VulkanRenderer&) = default;
 
-        void acquire_next_swapchain_image();
+        bool acquire_next_swapchain_image();
         void begin_default_render_pass(VkCommandBuffer cmd, float r, float g, float b, float a);
         void present();
 
@@ -189,6 +189,7 @@ namespace g_app {
         void init_framebuffers();
         void init_sync_objects();
         void init_descriptor_pool();
+        void recreate_swapchain();
 
         friend class VulkanRendererInit;
     };

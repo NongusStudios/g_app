@@ -46,29 +46,10 @@ namespace g_app {
         }
     }
 
-    DescriptorSet::DescriptorSet(VulkanRenderer renderer, const DescriptorSet::Config &config):
+    DescriptorSet::DescriptorSet(const VulkanRenderer& renderer, VkDescriptorSet set, const std::string &label):
         self{std::make_shared<Inner>(renderer)}
     {
-        self->label = config.label;
-        self->pool = config.pool;
-
-        auto inner = renderer.inner();
-
-        std::vector<VkDescriptorSetLayout> layouts(config.set_count, config.layout.vk_descriptor_set_layout());
-        VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-        alloc_info.descriptorPool = config.pool;
-        alloc_info.descriptorSetCount = config.set_count;
-        alloc_info.pSetLayouts = layouts.data();
-
-        self->sets.resize(config.set_count);
-
-        VkResult result = VK_SUCCESS;
-        if((result = vkAllocateDescriptorSets(inner->device, &alloc_info, self->sets.data())) != VK_SUCCESS){
-            throw std::runtime_error(
-                    std::format(
-                            "Failed to create a descriptor set layout! label = {}, result = {}", self->label, static_cast<uint32_t>(result)
-                    )
-            );
-        }
+        self->label = label;
+        self->set = set;
     }
 }

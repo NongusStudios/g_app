@@ -31,6 +31,7 @@ include_directories(
         external/vma/include
         external/spdlog/include
         external/imgui
+        external/stb_image
         include
         ${VULKANSDK_INC}
 )
@@ -55,7 +56,9 @@ add_library(g_app
         include/vkgfx/render_pass.hpp
         src/vkgfx/render_pass.cpp
         include/vkgfx/descriptor.hpp
-        src/vkgfx/descriptor.cpp)
+        src/vkgfx/descriptor.cpp
+        external/stb_image/stb_image.cpp
+        include/vkgfx/texture.hpp)
 
 set(BUILD_EXAMPLES ON)
 

@@ -8,6 +8,7 @@
 #include "buffer.hpp"
 #include "pipeline.hpp"
 #include "descriptor.hpp"
+#include "image.hpp"
 
 namespace g_app {
     class CommandBuffer {
@@ -98,6 +99,58 @@ namespace g_app {
             return *this;
         }
 
+        template<typename T>
+        CommandBuffer& copy_buffer_to_image(const Buffer<T>& src, const Image& dst,
+                                            VkImageAspectFlags aspect_mask, VkImageLayout dst_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                            uint32_t mip_level = 0, uint32_t base_layer = 0, uint32_t layer_count = 1){
+            assert(self->recording && "Commands can't be called without first calling begin()!");
+
+            VkBufferImageCopy region = {};
+            region.imageSubresource.aspectMask = aspect_mask;
+            region.imageSubresource.mipLevel = mip_level;
+            region.imageSubresource.baseArrayLayer = base_layer;
+            region.imageSubresource.layerCount = layer_count;
+            region.imageOffset = {0, 0,0};
+            region.imageExtent = dst.extent();
+
+            vkCmdCopyBufferToImage(
+                self->cmdbuf,
+                src.vk_buffer(),
+                dst.vk_image(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &region
+            );
+
+            return *this;
+        }
+
+        CommandBuffer& transition_image_layout(const Image& image, VkImageLayout old_layout, VkImageLayout new_layout,
+                                               VkImageSubresourceRange subresource_range,
+                                               VkAccessFlags src_access, VkAccessFlags dst_access,
+                                               VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage){
+            assert(self->recording && "Commands can't be called without first calling begin()!");
+
+            VkImageMemoryBarrier barrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            barrier.oldLayout = old_layout;
+            barrier.newLayout = new_layout;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = image.vk_image();
+            barrier.subresourceRange = subresource_range;
+            barrier.srcAccessMask = src_access;
+            barrier.dstAccessMask = dst_access;
+
+            vkCmdPipelineBarrier(self->cmdbuf,
+                                 src_stage, dst_stage,
+                                 0,
+                                 0, nullptr,
+                                 0, nullptr,
+                                 1, &barrier);
+
+            return *this;
+        }
+
         CommandBuffer& draw_imgui(){
             assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
             self->renderer.render_imgui(self->cmdbuf);
@@ -108,7 +161,6 @@ namespace g_app {
             assert(self->recording && "Commands can't be called without first calling begin()!");
             assert(!self->in_render_pass && "Can't begin a render pass when another has already begun!");
 
-            self->renderer.acquire_next_swapchain_image();
             self->renderer.begin_default_render_pass(self->cmdbuf, r, g, b, a);
             self->in_render_pass = true;
             return *this;
@@ -163,15 +215,14 @@ namespace g_app {
 
         CommandBuffer& bind_descriptor_sets(
                 const Pipeline& pipeline, VkPipelineBindPoint bind_point,
-                const std::vector<DescriptorSet>& sets, const std::vector<uint32_t>& indices){
+                const std::vector<DescriptorSet>& sets){
             assert(self->recording && "Commands can't be called without first calling begin()!");
-            assert(sets.size() == indices.size());
 
             std::vector<VkDescriptorSet> vk_sets = {};
             vk_sets.reserve(sets.size());
 
-            for(uint32_t i = 0; i < sets.size(); i++){
-                vk_sets.push_back(sets[i].vk_descriptor_sets()[indices[i]]);
+            for(const auto& set : sets){
+                vk_sets.push_back(set.vk_descriptor_set());
             }
 
             vkCmdBindDescriptorSets(self->cmdbuf, bind_point, pipeline.vk_pipeline_layout(), 0,
