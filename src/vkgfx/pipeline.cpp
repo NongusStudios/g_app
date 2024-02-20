@@ -197,4 +197,33 @@ namespace g_app {
             );
         }
     }
+
+    Pipeline::Pipeline(VulkanRenderer renderer, const Pipeline::ComputeConfig &config): self{std::make_shared<Inner>(renderer)} {
+        self->label = config.label;
+        auto inner = renderer.inner();
+
+        VkPipelineLayoutCreateInfo layout_info = {VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+        layout_info.setLayoutCount = 0;
+        layout_info.pushConstantRangeCount = config.push_constants.size();
+        layout_info.pPushConstantRanges = config.push_constants.data();
+        layout_info.setLayoutCount = config.set_layouts.size();
+        layout_info.pSetLayouts = config.set_layouts.data();
+
+        VkResult result = VK_SUCCESS;
+        if((result = vkCreatePipelineLayout(inner->device, &layout_info, nullptr, &self->layout)) != VK_SUCCESS){
+            throw std::runtime_error(
+                    std::format("Failed to create a pipeline layout! label = {}, result = {}", self->label, static_cast<uint32_t>(result) )
+            );
+        }
+
+        VkComputePipelineCreateInfo create_info = {VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};
+        create_info.layout = self->layout;
+        create_info.stage = config.module.stage_info();
+
+        if((result = vkCreateComputePipelines(inner->device, nullptr, 1, &create_info, nullptr, &self->pipeline)) != VK_SUCCESS){
+            throw std::runtime_error(
+                    std::format("Failed to create a compute pipeline! label = {}, result = {}", self->label, static_cast<uint32_t>(result) )
+            );
+        }
+    }
 } // g_app

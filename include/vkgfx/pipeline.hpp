@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <format>
+#include <utility>
 
 #include "renderer.hpp"
 #include "render_pass.hpp"
@@ -182,6 +183,13 @@ namespace g_app {
             DepthStencilInfo depth_stencil_info;
         };
 
+        struct ComputeConfig {
+            std::string label = "unnamed pipeline";
+            ShaderModule module;
+            std::vector<VkPushConstantRange> push_constants = {};
+            std::vector<VkDescriptorSetLayout> set_layouts = {};
+        };
+
         struct Inner {
             VulkanRenderer renderer;
             VkPipeline pipeline = VK_NULL_HANDLE;
@@ -198,6 +206,7 @@ namespace g_app {
 
         // Inits graphics pipeline
         Pipeline(VulkanRenderer renderer, const GraphicsConfig& config);
+        Pipeline(VulkanRenderer renderer, const ComputeConfig& config);
 
         friend class GraphicsPipelineInit;
         friend class ComputePipelineInit;
@@ -283,9 +292,37 @@ namespace g_app {
     private:
         Pipeline::GraphicsConfig m_config;
     };
+
     class ComputePipelineInit {
     public:
+        ComputePipelineInit() = default;
 
+        ComputePipelineInit& set_label(const std::string& label){
+            m_config.label = label;
+            return *this;
+        }
+        ComputePipelineInit& set_shader_module(const ShaderModule& module){
+            m_config.module = module;
+            return *this;
+        }
+        ComputePipelineInit& add_push_constant_range(const VkPushConstantRange& range){
+            m_config.push_constants.push_back(range);
+            return *this;
+        }
+        ComputePipelineInit& add_descriptor_set_layout(const DescriptorSetLayout& layout){
+            m_config.set_layouts.push_back(layout.vk_descriptor_set_layout());
+            return *this;
+        }
+
+        Pipeline init(const VulkanRenderer& renderer){
+            try {
+                return {renderer, m_config};
+            } catch(const std::runtime_error& e) {
+                spdlog::error(e.what());
+                std::exit(EXIT_FAILURE);
+            }
+        }
     private:
+        Pipeline::ComputeConfig m_config;
     };
 } // g_app

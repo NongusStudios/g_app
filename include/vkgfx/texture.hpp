@@ -33,8 +33,14 @@ namespace g_app {
 
             int w, h, c;
             m_stb_data = stbi_load(path.c_str(), &w, &h, &c, desired_channels);
+            if(!m_stb_data){
+                spdlog::warn("TextureInit failed loading an image. TextureInit has not been modified! path = {}", path);
+                return *this;
+            }
+
             m_config.pixels = (void *) m_stb_data;
             m_config.extent = {static_cast<uint32_t>(w), static_cast<uint32_t>(h)};
+
             return *this;
         }
 

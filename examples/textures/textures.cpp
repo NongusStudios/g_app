@@ -75,8 +75,8 @@ int main(){
 
     auto [tex_image, tex_view] = g_app::TextureInit()
         .set_label("GruvWin Texture")
-        .load_from_file("examples/textures/gruvwin.png", STBI_rgb_alpha)
-        .set_format(VK_FORMAT_R8G8B8A8_SRGB, 4)
+        .load_from_file("../examples/textures/gruvwin.png", STBI_rgb_alpha)
+        .set_format(VK_FORMAT_R8G8B8A8_UNORM, 4)
         .init(app.renderer());
 
     auto sampler = g_app::SamplerInit()
@@ -95,8 +95,6 @@ int main(){
 
     auto desc_sets = desc_pool.allocate_sets({g_app::VulkanRenderer::MAX_FRAMES_IN_FLIGHT, desc_layout});
 
-
-
     auto pipeline = g_app::GraphicsPipelineInit()
             .add_descriptor_set_layout(desc_layout)
             .add_vertex_binding(g_app::VertexBindingBuilder(sizeof(Vertex))
@@ -105,12 +103,12 @@ int main(){
                 .build()
             ).attach_shader_module(g_app::ShaderModuleInit()
                 .set_label("Vertex Shader")
-                .set_src_from_file("examples/textures/shader.vert.spv")
+                .set_src_from_file("../examples/textures/shader.vert.spv")
                 .set_stage(VK_SHADER_STAGE_VERTEX_BIT)
                 .init(app.renderer())
             ).attach_shader_module(g_app::ShaderModuleInit()
                 .set_label("Fragment Shader")
-                .set_src_from_file("examples/textures/shader.frag.spv")
+                .set_src_from_file("../examples/textures/shader.frag.spv")
                 .set_stage(VK_SHADER_STAGE_FRAGMENT_BIT)
                 .init(app.renderer())
             ).set_render_pass(app.renderer().default_render_pass())

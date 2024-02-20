@@ -8,6 +8,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 add_subdirectory(external/glfw)
 add_subdirectory(external/spdlog)
 
+add_compile_options(/W2)
+
 # Build ImGui
 file(GLOB IMGUI_SRC
     external/imgui/*.h
@@ -22,7 +24,7 @@ add_library(imgui
     external/imgui/backends/imgui_impl_vulkan.cpp
 )
 
-set(PATH_TO_VULKANSDK C:/VulkanSDK/1.3.268.0)
+set(PATH_TO_VULKANSDK C:/VulkanSDK/1.3.275.0)
 set(VULKANSDK_INC ${PATH_TO_VULKANSDK}/Include)
 set(VULKANSDK_LIB ${PATH_TO_VULKANSDK}/Lib/vulkan-1.lib)
 

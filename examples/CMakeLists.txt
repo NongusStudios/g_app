@@ -1,4 +1,4 @@
-set(PATH_TO_VULKANSDK C:/VulkanSDK/1.3.268.0)
+set(PATH_TO_VULKANSDK C:/VulkanSDK/1.3.275.0)
 set(VULKANSDK_INC ${PATH_TO_VULKANSDK}/Include)
 set(VULKANSDK_LIB ${PATH_TO_VULKANSDK}/Lib/vulkan-1.lib)
 
@@ -12,13 +12,14 @@ foreach(SRC ${SRCS})
     get_filename_component(EXEC ${SRC} NAME_WLE)
     add_executable(${EXEC} ${SRC})
     target_link_libraries(${EXEC}
-            glfw g_app spdlog::spdlog ${VULKANSDK_LIB} imgui
+            g_app glfw spdlog::spdlog ${VULKANSDK_LIB} imgui
     )
 endforeach ()
 
 file(GLOB GLSL_FILES
         **/*.vert
         **/*.frag
+        **/*.comp
 )
 
 foreach(GLSL_FILE ${GLSL_FILES})
@@ -33,6 +34,4 @@ foreach(GLSL_FILE ${GLSL_FILES})
     list(APPEND SPIRV_FILES ${SPIRV})
 endforeach(GLSL_FILE)
 
-add_custom_target(shaders ALL
-        DEPENDS ${SPIRV_FILES}
-)
+add_custom_target(shaders ALL DEPENDS ${SPIRV_FILES})

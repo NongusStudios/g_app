@@ -39,6 +39,7 @@ namespace g_app {
     class VulkanRenderer {
     public:
         static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+        static constexpr VkFormat TARGET_SWAPCHAIN_FORMAT = VK_FORMAT_B8G8R8A8_UNORM;
 
         struct SwapchainDepthResources {
             std::vector<VkImage> images = {};
@@ -128,6 +129,8 @@ namespace g_app {
             ImDrawData* draw_data = ImGui::GetDrawData();
             ImGui_ImplVulkan_RenderDrawData(draw_data, cmd);
         }
+
+        VkFormat choosen_swapchain_format() const { return self->swapchain.format; }
 
         uint32_t current_frame() const { return self->current_frame; }
         uint32_t current_image() const { return self->current_image; }
@@ -232,6 +235,7 @@ namespace g_app {
         }
         VulkanRendererInit& set_frame_rate_limit(uint32_t limit){
             m_config.frame_rate_limit = limit;
+            return *this;
         }
 
         VulkanRenderer init(GLFWwindow* window) const { return {window, m_config}; }

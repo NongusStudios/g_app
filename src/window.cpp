@@ -58,12 +58,12 @@ namespace g_app {
         GLFWmonitor** mons = glfwGetMonitors(&mon_count);
 
         m_monitors.reserve(mon_count);
-        for(size_t i = 0; i < mon_count; i++){
+        for(int i = 0; i < mon_count; i++){
             m_monitors.emplace_back(mons[i], i);
         }
 
         Monitor monitor = {};
-        if(primary_monitor || (!primary_monitor && !choose_monitor))
+        if(primary_monitor || !choose_monitor)
             monitor = Monitor(glfwGetPrimaryMonitor(), 0);
         else if(choose_monitor)
             monitor = choose_monitor(m_monitors);
