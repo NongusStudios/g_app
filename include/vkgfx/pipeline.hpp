@@ -11,6 +11,7 @@
 #include "renderer.hpp"
 #include "render_pass.hpp"
 #include "descriptor.hpp"
+#include "pipeline_cache.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -175,6 +176,7 @@ namespace g_app {
             std::vector<VkDescriptorSetLayout> set_layouts = {};
             std::vector<VertexBinding> bindings = {};
             VkRenderPass render_pass = VK_NULL_HANDLE;
+            VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
 
             VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             RasterizationInfo rasterization_info;
@@ -188,6 +190,7 @@ namespace g_app {
             ShaderModule module;
             std::vector<VkPushConstantRange> push_constants = {};
             std::vector<VkDescriptorSetLayout> set_layouts = {};
+            VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
         };
 
         struct Inner {
@@ -280,6 +283,14 @@ namespace g_app {
             m_config.render_pass = render_pass;
             return *this;
         }
+        GraphicsPipelineInit& set_pipeline_cache(const PipelineCache& cache){
+            m_config.pipeline_cache = cache.vk_pipeline_cache();
+            return *this;
+        }
+        GraphicsPipelineInit& set_pipeline_cache(VkPipelineCache cache){
+            m_config.pipeline_cache = cache;
+            return *this;
+        }
 
         Pipeline init(const VulkanRenderer& renderer){
             try {
@@ -311,6 +322,14 @@ namespace g_app {
         }
         ComputePipelineInit& add_descriptor_set_layout(const DescriptorSetLayout& layout){
             m_config.set_layouts.push_back(layout.vk_descriptor_set_layout());
+            return *this;
+        }
+        ComputePipelineInit& set_pipeline_cache(const PipelineCache& cache){
+            m_config.pipeline_cache = cache.vk_pipeline_cache();
+            return *this;
+        }
+        ComputePipelineInit& set_pipeline_cache(VkPipelineCache cache){
+            m_config.pipeline_cache = cache;
             return *this;
         }
 

@@ -190,7 +190,7 @@ namespace g_app {
         create_info.basePipelineHandle = VK_NULL_HANDLE;
 
         if((result =
-            vkCreateGraphicsPipelines(inner->device, VK_NULL_HANDLE, 1, &create_info, nullptr, &self->pipeline))
+            vkCreateGraphicsPipelines(inner->device, config.pipeline_cache, 1, &create_info, nullptr, &self->pipeline))
             != VK_SUCCESS){
             throw std::runtime_error(
                     std::format("Failed to create a graphics pipeline! label = {}, result = {}", self->label, static_cast<uint32_t>(result) )
@@ -220,7 +220,7 @@ namespace g_app {
         create_info.layout = self->layout;
         create_info.stage = config.module.stage_info();
 
-        if((result = vkCreateComputePipelines(inner->device, nullptr, 1, &create_info, nullptr, &self->pipeline)) != VK_SUCCESS){
+        if((result = vkCreateComputePipelines(inner->device, config.pipeline_cache, 1, &create_info, nullptr, &self->pipeline)) != VK_SUCCESS){
             throw std::runtime_error(
                     std::format("Failed to create a compute pipeline! label = {}, result = {}", self->label, static_cast<uint32_t>(result) )
             );

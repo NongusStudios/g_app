@@ -132,6 +132,7 @@ int main(){
     Pipeline::RasterizationInfo rasterization_info = {};
     rasterization_info.cull_mode = VK_CULL_MODE_BACK_BIT;
 
+    auto pipeline_cache = PipelineCache::load(app.renderer(), "cube_pipeline.cache");
     auto pipeline = GraphicsPipelineInit()
             .set_label("Cube Pipeline")
             .set_rasterization_info(rasterization_info)
@@ -151,6 +152,7 @@ int main(){
                 .set_stage(VK_SHADER_STAGE_FRAGMENT_BIT)
                 .init(app.renderer()))
             .set_render_pass(app.renderer().default_render_pass())
+            .set_pipeline_cache(pipeline_cache)
             .init(app.renderer());
 
     CommandBuffer cmd[VulkanRenderer::MAX_FRAMES_IN_FLIGHT];
@@ -211,14 +213,17 @@ int main(){
             .end_render_pass()
 
             .end()
-            .submit(g_app::Queue::GRAPHICS,
-                    {app.renderer().current_image_available_semaphore()}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
+            .submit(g_app::Queue::GRAPHICS, {
+                    {app.renderer().current_image_available_semaphore()},
+                    {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
                     {app.renderer().current_render_finished_semaphore()},
-                    app.renderer().current_in_flight_fence());
+                    app.renderer().current_in_flight_fence()
+            });
 
         app.renderer().present();
     });
 
+    pipeline_cache.serialize("cube_pipeline.cache");
     app.renderer().device_wait_idle();
     return 0;
 }

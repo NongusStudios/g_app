@@ -24,11 +24,11 @@ void main(){
                         cell_buffer.cells[idx].type = 0;
                     } else if(cell_buffer.cells[(idx-1) + GRID_SIZE_X].type == 0){
                         cell_buffer.cells[(idx-1) + GRID_SIZE_X].type = 2;
-                        cell_buffer.cells[(idx-1) + GRID_SIZE_X].has_moved = true;
+                        cell_buffer.cells[(idx-1) + GRID_SIZE_X].has_moved = 1;
                         cell_buffer.cells[idx].type = 0;
                     } else if(cell_buffer.cells[(idx+1) + GRID_SIZE_X].type == 0){
                         cell_buffer.cells[(idx+1) + GRID_SIZE_X].type = 2;
-                        cell_buffer.cells[(idx+1) + GRID_SIZE_X].has_moved = true;
+                        cell_buffer.cells[(idx+1) + GRID_SIZE_X].has_moved = 1;
                         cell_buffer.cells[idx].type = 0;
                     }
                     break;

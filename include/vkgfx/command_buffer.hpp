@@ -11,6 +11,13 @@
 #include "image.hpp"
 
 namespace g_app {
+    struct SubmitSyncObjects {
+        std::vector<VkSemaphore> wait = {};
+        std::vector<VkPipelineStageFlags> wait_stages = {};
+        std::vector<VkSemaphore> signal = {};
+        VkFence fence = VK_NULL_HANDLE;
+    };
+
     class CommandBuffer {
     public:
         CommandBuffer() = default;
@@ -60,21 +67,20 @@ namespace g_app {
             return *this;
         }
 
-        void submit(Queue queue, const std::vector<VkSemaphore>& wait = {}, const std::vector<VkPipelineStageFlags>& wait_stages={},
-                    const std::vector<VkSemaphore>& signal = {}, VkFence fence = VK_NULL_HANDLE){
+        void submit(Queue queue, const SubmitSyncObjects& sync = {}){
             if(self->in_render_pass) end_render_pass();
             if(self->recording) end();
 
             VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &self->cmdbuf;
-            submit_info.waitSemaphoreCount = wait.size();
-            submit_info.pWaitSemaphores = wait.data();
-            submit_info.pWaitDstStageMask = wait_stages.data();
-            submit_info.signalSemaphoreCount = signal.size();
-            submit_info.pSignalSemaphores = signal.data();
+            submit_info.waitSemaphoreCount = sync.wait.size();
+            submit_info.pWaitSemaphores = sync.wait.data();
+            submit_info.pWaitDstStageMask = sync.wait_stages.data();
+            submit_info.signalSemaphoreCount = sync.signal.size();
+            submit_info.pSignalSemaphores = sync.signal.data();
 
-            vkQueueSubmit(self->renderer.get_queue(queue), 1, &submit_info, fence);
+            vkQueueSubmit(self->renderer.get_queue(queue), 1, &submit_info, sync.fence);
             vkQueueWaitIdle(self->renderer.get_queue(queue));
 
             vkResetCommandBuffer(self->cmdbuf, 0);
@@ -194,7 +200,7 @@ namespace g_app {
             assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
             VkDeviceSize offset_bytes = offset * sizeof(T);
             VkBuffer vk_buffer = buffer.vk_buffer();
-            vkCmdBindIndexBuffer(self->cmdbuf, vk_buffer, offset, type);
+            vkCmdBindIndexBuffer(self->cmdbuf, vk_buffer, offset_bytes, type);
             return *this;
         }
 

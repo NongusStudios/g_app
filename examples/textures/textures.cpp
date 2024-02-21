@@ -144,10 +144,12 @@ int main(){
             .end_render_pass()
 
             .end()
-            .submit(g_app::Queue::GRAPHICS,
-                    {app.renderer().current_image_available_semaphore()}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
+            .submit(g_app::Queue::GRAPHICS, {
+                    {app.renderer().current_image_available_semaphore()},
+                    {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
                     {app.renderer().current_render_finished_semaphore()},
-                    app.renderer().current_in_flight_fence());
+                    app.renderer().current_in_flight_fence()
+            });
         app.renderer().present();
     });
 
