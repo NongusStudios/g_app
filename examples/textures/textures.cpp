@@ -128,17 +128,17 @@ int main(){
         writer.commit_writes(app.renderer());
     }
 
-    app.main_loop([&](const g_app::Time& time){
+    app.main_loop([&](const std::vector<g_app::Event>& events, const g_app::Time& time){
         if(!app.renderer().acquire_next_swapchain_image()) return;
 
         uint32_t frame = app.renderer().current_frame();
         command_buffers[frame]
-            .begin()
+                .begin()
 
-            .begin_default_render_pass(0.2f, 0.2f, 0.2f, 1.0f)
+                .begin_default_render_pass(0.2f, 0.2f, 0.2f, 1.0f)
                 .bind_vertex_buffer(vertex_buffer)
                 .bind_index_buffer(index_buffer, VK_INDEX_TYPE_UINT32)
-                .bind_graphics_pipeline(pipeline)
+                .bind_pipeline(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS)
                 .bind_descriptor_sets(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS, {desc_sets[frame]})
                 .draw_indexed(6, 1)
             .end_render_pass()

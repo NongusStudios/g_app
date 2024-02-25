@@ -166,7 +166,7 @@ int main(){
     float scale = 1.0f;
     TransformData transform = {};
 
-    app.main_loop([&](const Time& time){
+    app.main_loop([&](const std::vector<Event>& events, const Time& time){
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -203,7 +203,7 @@ int main(){
         cmd[app.renderer().current_frame()]
             .begin()
             .begin_default_render_pass(0.2f, 0.2f, 0.2f, 1.0f)
-            .bind_graphics_pipeline(pipeline)
+            .bind_pipeline(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS)
             .bind_vertex_buffer(vertex_buffer)
             .bind_index_buffer(index_buffer, VK_INDEX_TYPE_UINT32)
             .bind_descriptor_sets(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS,

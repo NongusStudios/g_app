@@ -2,6 +2,32 @@
 // Created by jandr on 14/11/2023.
 //
 
+/*
+ * This file is a part of the g_app open-source project.
+ *
+ *  repo: https://github.com/NongusStudios/g_app.git
+ *  license: MIT
+ *
+ *  Copyright (c) 2023 Nongus Studios
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in all
+ *  copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ */
+
 #pragma once
 
 #include <fstream>
@@ -49,6 +75,8 @@ namespace g_app {
             std::string label;
 
             ~Inner(){
+                if(!renderer.is_valid()) return;
+
                 vkDestroyShaderModule(renderer.inner()->device, module, nullptr);
             }
         };
@@ -123,47 +151,164 @@ namespace g_app {
     class GraphicsPipelineInit;
     class ComputePipelineInit;
 
+    struct RasterizationInfo {
+        VkPolygonMode polygon_mode = VK_POLYGON_MODE_FILL;
+        float line_width = 1.0f;
+        VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
+        VkFrontFace front_face = VK_FRONT_FACE_CLOCKWISE;
+    };
+    class RasterizationInfoBuilder {
+    public:
+        RasterizationInfoBuilder() = default;
+
+        RasterizationInfoBuilder& set_polygon_mode(VkPolygonMode mode){
+            m_info.polygon_mode = mode;
+            return *this;
+        }
+
+        RasterizationInfoBuilder& set_line_width(float width){
+            m_info.line_width = width;
+            return *this;
+        }
+
+        RasterizationInfoBuilder& set_cull_mode(VkCullModeFlags cull_mode){
+            m_info.cull_mode = cull_mode;
+            return *this;
+        }
+
+        RasterizationInfoBuilder& set_front_face(VkFrontFace face){
+            m_info.front_face = face;
+            return *this;
+        }
+
+        RasterizationInfo build(){
+            return m_info;
+        }
+    private:
+        RasterizationInfo m_info = {};
+    };
+
+    struct BlendInfo {
+        bool blend_enabled = true;
+        VkBlendFactor src_color_factor = VK_BLEND_FACTOR_SRC_ALPHA;
+        VkBlendFactor dst_color_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        VkBlendOp color_op = VK_BLEND_OP_ADD;
+        VkBlendFactor src_alpha_factor = VK_BLEND_FACTOR_ONE;
+        VkBlendFactor dst_alpha_factor = VK_BLEND_FACTOR_ZERO;
+        VkBlendOp alpha_op = VK_BLEND_OP_ADD;
+        bool logic_op_enabled = false;
+        VkLogicOp logic_op = VK_LOGIC_OP_COPY;
+    };
+    class BlendInfoBuilder {
+    public:
+        BlendInfoBuilder() = default;
+
+        BlendInfoBuilder& enable_blending() {
+            m_info.blend_enabled = true;
+            return *this;
+        }
+
+        BlendInfoBuilder& disable_blending() {
+            m_info.blend_enabled = false;
+            return *this;
+        }
+
+        BlendInfoBuilder& enable_logic_op(VkLogicOp op) {
+            m_info.logic_op_enabled = true;
+            m_info.logic_op = op;
+            return *this;
+        }
+
+        BlendInfoBuilder& disable_logic_op() {
+            m_info.logic_op_enabled = false;
+            return *this;
+        }
+
+        BlendInfoBuilder& set_color_factor(VkBlendFactor src, VkBlendFactor dst, VkBlendOp op){
+            m_info.src_color_factor = src;
+            m_info.dst_color_factor = dst;
+            m_info.color_op = op;
+            return *this;
+        }
+
+        BlendInfoBuilder& set_alpha_factor(VkBlendFactor src, VkBlendFactor dst, VkBlendOp op){
+            m_info.src_alpha_factor = src;
+            m_info.dst_alpha_factor = dst;
+            m_info.alpha_op = op;
+            return *this;
+        }
+
+        BlendInfo build() { return m_info; }
+    private:
+        BlendInfo m_info = {};
+    };
+
+    struct DepthStencilInfo {
+        bool depth_enabled = true;
+        bool write_enabled = true;
+        VkCompareOp compare_op = VK_COMPARE_OP_LESS;
+        bool bounds_test_enabled = false;
+        float min_depth_bounds = 0.0f;
+        float max_depth_bounds = 1.0f;
+        bool stencil_enabled = false;
+        VkStencilOpState front = {};
+        VkStencilOpState back = {};
+    };
+    class DepthStencilInfoBuilder {
+    public:
+        DepthStencilInfoBuilder() = default;
+
+        DepthStencilInfoBuilder& enable_depth_test(bool write_enabled){
+            m_info.depth_enabled = true;
+            m_info.write_enabled = write_enabled;
+            return *this;
+        }
+
+        DepthStencilInfoBuilder& disable_depth_test(){
+            m_info.depth_enabled = false;
+            return *this;
+        }
+
+        DepthStencilInfoBuilder& set_compare_op(VkCompareOp op){
+            m_info.compare_op = op;
+            return *this;
+        }
+
+        DepthStencilInfoBuilder& set_depth_bounds(float min, float max){
+            m_info.min_depth_bounds = min;
+            m_info.max_depth_bounds = max;
+            return *this;
+        }
+
+        DepthStencilInfoBuilder& enable_stencil(VkStencilOpState front, VkStencilOpState back){
+            m_info.stencil_enabled = true;
+            m_info.front = front;
+            m_info.back = back;
+            return *this;
+        }
+
+        DepthStencilInfoBuilder& disable_stencil(){
+            m_info.stencil_enabled = false;
+            return *this;
+        }
+
+        DepthStencilInfo build() { return m_info; }
+    private:
+        DepthStencilInfo m_info = {};
+    };
+
+    struct VertexAttribute {
+        VkFormat format;
+        uint32_t offset;
+    };
+    struct VertexBinding {
+        uint32_t stride = 0;
+        VkVertexInputRate input_rate = VK_VERTEX_INPUT_RATE_VERTEX;
+        std::vector<VertexAttribute> attributes = {};
+    };
+
     class Pipeline {
     public:
-        struct RasterizationInfo {
-            VkPolygonMode polygon_mode = VK_POLYGON_MODE_FILL;
-            float line_width = 1.0f;
-            VkCullModeFlags cull_mode = VK_CULL_MODE_NONE;
-            VkFrontFace front_face = VK_FRONT_FACE_CLOCKWISE;
-        };
-        struct BlendInfo {
-            bool blend_enabled = true;
-            VkBlendFactor src_color_factor = VK_BLEND_FACTOR_SRC_ALPHA;
-            VkBlendFactor dst_color_factor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-            VkBlendOp color_op = VK_BLEND_OP_ADD;
-            VkBlendFactor src_alpha_factor = VK_BLEND_FACTOR_ONE;
-            VkBlendFactor dst_alpha_factor = VK_BLEND_FACTOR_ZERO;
-            VkBlendOp alpha_op = VK_BLEND_OP_ADD;
-            bool logic_op_enabled = false;
-            VkLogicOp logic_op = VK_LOGIC_OP_COPY;
-        };
-        struct DepthStencilInfo {
-            bool depth_enabled = true;
-            bool write_enabled = true;
-            VkCompareOp compare_op = VK_COMPARE_OP_LESS;
-            bool bounds_test_enabled = false;
-            float min_depth_bounds = 0.0f;
-            float max_depth_bounds = 1.0f;
-            bool stencil_enabled = false;
-            VkStencilOpState front = {};
-            VkStencilOpState back = {};
-        };
-
-        struct VertexAttribute {
-            VkFormat format;
-            uint32_t offset;
-        };
-        struct VertexBinding {
-            uint32_t stride = 0;
-            VkVertexInputRate input_rate = VK_VERTEX_INPUT_RATE_VERTEX;
-            std::vector<VertexAttribute> attributes = {};
-        };
-
         Pipeline() = default;
 
         VkPipeline vk_pipeline() const { return self->pipeline; }
@@ -177,6 +322,7 @@ namespace g_app {
             std::vector<VertexBinding> bindings = {};
             VkRenderPass render_pass = VK_NULL_HANDLE;
             VkPipelineCache pipeline_cache = VK_NULL_HANDLE;
+            uint32_t subpass = 0;
 
             VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             RasterizationInfo rasterization_info;
@@ -200,6 +346,8 @@ namespace g_app {
             std::string label;
 
             ~Inner(){
+                if(!renderer.is_valid()) return;
+
                 vkDestroyPipeline(renderer.inner()->device, pipeline, nullptr);
                 vkDestroyPipelineLayout(renderer.inner()->device, layout, nullptr);
             }
@@ -224,11 +372,11 @@ namespace g_app {
             binding.attributes.push_back({format, offset});
             return *this;
         }
-        Pipeline::VertexBinding build(){
+        VertexBinding build(){
             return binding;
         }
     private:
-        Pipeline::VertexBinding binding = {};
+        VertexBinding binding = {};
     };
 
     class GraphicsPipelineInit {
@@ -247,7 +395,7 @@ namespace g_app {
             m_config.topology = topology;
             return *this;
         }
-        GraphicsPipelineInit& set_rasterization_info(const Pipeline::RasterizationInfo& info){
+        GraphicsPipelineInit& set_rasterization_info(const RasterizationInfo& info){
             m_config.rasterization_info = info;
             return *this;
         }
@@ -255,15 +403,15 @@ namespace g_app {
             m_config.sample_count = samples;
             return *this;
         }
-        GraphicsPipelineInit& set_blend_info(const Pipeline::BlendInfo& info){
+        GraphicsPipelineInit& set_blend_info(const BlendInfo& info){
             m_config.blend_info = info;
             return *this;
         }
-        GraphicsPipelineInit& set_depth_stencil_info(const Pipeline::DepthStencilInfo& info){
+        GraphicsPipelineInit& set_depth_stencil_info(const DepthStencilInfo& info){
             m_config.depth_stencil_info = info;
             return *this;
         }
-        GraphicsPipelineInit& add_vertex_binding(const Pipeline::VertexBinding& vertex_binding){
+        GraphicsPipelineInit& add_vertex_binding(const VertexBinding& vertex_binding){
             m_config.bindings.push_back(vertex_binding);
             return *this;
         }
@@ -281,6 +429,10 @@ namespace g_app {
         }
         GraphicsPipelineInit& set_render_pass(VkRenderPass render_pass){
             m_config.render_pass = render_pass;
+            return *this;
+        }
+        GraphicsPipelineInit& set_subpass(const uint32_t subpass){
+            m_config.subpass = subpass;
             return *this;
         }
         GraphicsPipelineInit& set_pipeline_cache(const PipelineCache& cache){

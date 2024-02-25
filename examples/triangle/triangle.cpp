@@ -91,7 +91,7 @@ int main(){
     float offset[] = {0.0f, 0.0f};
     float dir[] = {1.0f, -1.0f};
 
-    app.main_loop([&](const g_app::Time& time){
+    app.main_loop([&](const std::vector<g_app::Event>& events, const g_app::Time& time){
         offset[0] += dir[0] * time.deltaf;
         offset[1] += dir[1] * time.deltaf * 0.8f;
         if(offset[0] >= 0.5f || offset[0] <= -0.5f) dir[0] *= -1.0f;
@@ -102,11 +102,11 @@ int main(){
         if(!app.renderer().acquire_next_swapchain_image()) return;
 
         command_buffers[app.renderer().current_frame()]
-            .begin()
+                .begin()
 
-            .begin_default_render_pass(0.2f, 0.2f, 0.2f, 1.0f)
+                .begin_default_render_pass(0.2f, 0.2f, 0.2f, 1.0f)
                 .bind_vertex_buffer(vertex_buffer)
-                .bind_graphics_pipeline(pipeline)
+                .bind_pipeline(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS)
                 .push_constants(pipeline, VK_SHADER_STAGE_VERTEX_BIT, offset)
                 .draw(3, 1, 0, 0)
                 .draw_imgui()

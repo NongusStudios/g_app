@@ -2,6 +2,32 @@
 // Created by jandr on 15/11/2023.
 //
 
+/*
+ * This file is a part of the g_app open-source project.
+ *
+ *  repo: https://github.com/NongusStudios/g_app.git
+ *  license: MIT
+ *
+ *  Copyright (c) 2023 Nongus Studios
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in all
+ *  copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ */
+
 #pragma once
 
 #include "renderer.hpp"
@@ -9,6 +35,7 @@
 #include "pipeline.hpp"
 #include "descriptor.hpp"
 #include "image.hpp"
+#include "framebuffer.hpp"
 
 namespace g_app {
     struct SubmitSyncObjects {
@@ -172,6 +199,36 @@ namespace g_app {
             return *this;
         }
 
+        CommandBuffer& begin_render_pass(const RenderPass& render_pass, const Framebuffer& framebuffer,
+                                         const std::vector<VkClearValue>& clear_values,
+                                         const Extent2D<uint32_t>& viewport_extent){
+
+            VkExtent2D extent = {viewport_extent.width, viewport_extent.height};
+
+            VkRenderPassBeginInfo begin_info = {VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+            begin_info.renderPass = render_pass.vk_render_pass();
+            begin_info.framebuffer = framebuffer.vk_framebuffer();
+            begin_info.renderArea = {{0, 0}, extent};
+            begin_info.clearValueCount = clear_values.size();
+            begin_info.pClearValues = clear_values.data();
+
+            vkCmdBeginRenderPass(self->cmdbuf, &begin_info, VK_SUBPASS_CONTENTS_INLINE);
+            VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = static_cast<float>(extent.width);
+            viewport.height = static_cast<float>(extent.height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+            VkRect2D scissor{{0, 0}, extent};
+            vkCmdSetViewport(self->cmdbuf, 0, 1, &viewport);
+            vkCmdSetScissor(self->cmdbuf, 0, 1, &scissor);
+
+            self->in_render_pass = true;
+
+            return *this;
+        }
+
         CommandBuffer& end_render_pass(){
             assert(self->in_render_pass && "Can't end a render pass when one hasn't begun!");
 
@@ -180,9 +237,9 @@ namespace g_app {
             return *this;
         }
 
-        CommandBuffer& bind_graphics_pipeline(const Pipeline& pipeline){
+        CommandBuffer &bind_pipeline(const Pipeline &pipeline, VkPipelineBindPoint bind_point) {
             assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
-            vkCmdBindPipeline(self->cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.vk_pipeline());
+            vkCmdBindPipeline(self->cmdbuf, bind_point, pipeline.vk_pipeline());
             return *this;
         }
 
@@ -237,6 +294,11 @@ namespace g_app {
             return *this;
         }
 
+        CommandBuffer& next_subpass(VkSubpassContents contents=VK_SUBPASS_CONTENTS_INLINE){
+            assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
+            vkCmdNextSubpass(self->cmdbuf, contents);
+        }
+
         CommandBuffer& draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex=0, uint32_t first_instance=0){
             assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
             vkCmdDraw(self->cmdbuf, vertex_count, instance_count, first_vertex, first_instance);
@@ -252,7 +314,12 @@ namespace g_app {
             return *this;
         }
 
-        CommandBuffer& cmd(const std::function<void(VkCommandBuffer)>& f){
+        CommandBuffer& cmd(const std::function<void(CommandBuffer&)>& f){
+            f(*this);
+            return *this;
+        }
+
+        CommandBuffer& vk_cmd(const std::function<void(VkCommandBuffer)>& f){
             f(self->cmdbuf);
             return *this;
         }
@@ -264,6 +331,8 @@ namespace g_app {
             bool in_render_pass = false;
 
             ~Inner(){
+                if(!renderer.is_valid()) return;
+
                 auto inner = renderer.inner();
                 vkFreeCommandBuffers(inner->device, inner->command_pool, 1, &cmdbuf);
             }

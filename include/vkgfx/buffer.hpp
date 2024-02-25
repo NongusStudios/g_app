@@ -2,6 +2,32 @@
 // Created by jandr on 14/11/2023.
 //
 
+/*
+ * This file is a part of the g_app open-source project.
+ *
+ *  repo: https://github.com/NongusStudios/g_app.git
+ *  license: MIT
+ *
+ *  Copyright (c) 2023 Nongus Studios
+ *  Permission is hereby granted, free of charge, to any person obtaining a copy
+ *  of this software and associated documentation files (the "Software"), to deal
+ *  in the Software without restriction, including without limitation the rights
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  copies of the Software, and to permit persons to whom the Software is
+ *  furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included in all
+ *  copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *  SOFTWARE.
+ */
+
 #pragma once
 
 #include "renderer.hpp"
@@ -46,6 +72,8 @@ namespace g_app {
             std::string label = "unnamed buffer";
 
             ~Inner(){
+                if(!renderer.is_valid()) return;
+
                 vmaDestroyBuffer(renderer.inner()->allocator, buffer, allocation);
             }
         };
@@ -89,23 +117,34 @@ namespace g_app {
     public:
         BufferInit() = default;
 
+        /* Used for debugging purposes. */
         BufferInit& set_label(const std::string& label){
             m_config.label = label;
             return *this;
         }
-
+        /* Specifies the usage of the buffer. e.g. VK_BUFFER_USAGE_VERTEX_BUFFER_BIT */
         BufferInit& set_usage(VkBufferUsageFlags usage){
             m_config.usage = usage;
             return *this;
         }
+
+        /* Specifies how the buffers memory will be used. Set to VMA_MEMORY_USAGE_AUTO by default. */
         BufferInit& set_memory_usage(VmaMemoryUsage usage){
             m_config.memory_usage = usage;
             return *this;
         }
+
+        /* Specifies the size of the buffer in indices not bytes. */
         BufferInit& set_size(size_t size){
             m_config.size = size;
             return *this;
         }
+
+        /*
+         * Populates the buffer with data by mapping its memory and using memcpy().
+         * Will not work if the buffer is not host visible.
+         * Use a staging buffer if your buffer memory is GPU only.
+         */
         BufferInit& set_data(const T* data){
             m_config.data = data;
             return *this;

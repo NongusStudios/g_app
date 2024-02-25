@@ -1,6 +1,6 @@
 /build
 /build-release
-/cmake-build-debug
+/cmake-build-debug-mingw
 /bin
 *.spv
 *.cache

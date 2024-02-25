@@ -1,0 +1,2 @@
+- Mip Map Generation
+    Should be a part of the TextureInit() class

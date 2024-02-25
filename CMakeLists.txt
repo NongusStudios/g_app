@@ -8,12 +8,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 add_subdirectory(external/glfw)
 add_subdirectory(external/spdlog)
 
-if(MSVC)
-    add_compile_options(/W2)
-else ()
-    add_compile_options(-Wall -pedantic)
-endif ()
-
 # Build ImGui
 file(GLOB IMGUI_SRC
     external/imgui/*.h
@@ -51,7 +45,6 @@ add_library(g_app
         include/window.hpp
         src/vkgfx/renderer.cpp
         include/vkgfx/renderer.hpp
-        include/vkgfx/types.hpp
         include/vkgfx/buffer.hpp
         include/vkgfx/all.hpp
         src/vkgfx/pipeline.cpp
