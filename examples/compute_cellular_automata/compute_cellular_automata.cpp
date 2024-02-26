@@ -55,19 +55,44 @@ int main(){
     auto vertex_buffer = g_app::BufferInit<Vertex>()
             .set_size(4)
             .set_data(vertices)
+            .set_usage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_CPU_TO_GPU)
             .init(app.renderer());
 
     auto index_buffer = g_app::BufferInit<uint32_t>()
             .set_size(6)
             .set_data(indices)
+            .set_usage(VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_CPU_TO_GPU)
             .init(app.renderer());
 
     auto cell_buffer = g_app::BufferInit<Cell>()
             .set_size(GRID_SIZE_X*GRID_SIZE_Y)
+            .set_usage(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
             .set_memory_usage(VMA_MEMORY_USAGE_CPU_TO_GPU)
             .init(app.renderer());
+
+    auto desc_pool = g_app::DescriptorPoolInit()
+            .add_pool_size(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2)
+            .set_max_sets(2)
+            .init(app.renderer());
+
+    auto comp_desc_layout = g_app::DescriptorSetLayoutInit()
+            .add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT)
+            .init(app.renderer());
+
+    auto desc_layout = g_app::DescriptorSetLayoutInit()
+            .add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT)
+            .init(app.renderer());
+
+    auto comp_set = desc_pool.allocate_set(comp_desc_layout);
+    auto set = desc_pool.allocate_set(desc_layout);
+
+    // Write sets
+    g_app::DescriptorWriter()
+        .write_buffer(comp_set, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, cell_buffer)
+        .write_buffer(set, 0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, cell_buffer)
+        .commit_writes(app.renderer());
 
     Cell* cell_data = cell_buffer.map();
 
@@ -81,25 +106,65 @@ int main(){
         }
     }
 
+    auto comp_pipeline = g_app::ComputePipelineInit()
+            .add_descriptor_set_layout(comp_desc_layout)
+            .set_shader_module(g_app::ShaderModuleInit()
+                .set_stage(VK_SHADER_STAGE_COMPUTE_BIT)
+                .set_src_from_file("../examples/compute_cellular_automata/cell.comp.spv")
+                .init(app.renderer())
+            ).init(app.renderer());
+
+    auto pipeline = g_app::GraphicsPipelineInit()
+            .add_descriptor_set_layout(desc_layout)
+            .add_vertex_binding(g_app::VertexBindingBuilder(sizeof(Vertex))
+                .add_vertex_attribute(VK_FORMAT_R32G32_SFLOAT, 0)
+                .add_vertex_attribute(VK_FORMAT_R32G32_SFLOAT, sizeof(float)*2)
+                .build())
+            .attach_shader_module(g_app::ShaderModuleInit()
+                .set_stage(VK_SHADER_STAGE_VERTEX_BIT)
+                .set_src_from_file("../examples/compute_cellular_automata/cell.vert.spv")
+                .init(app.renderer()))
+            .attach_shader_module(g_app::ShaderModuleInit()
+                .set_stage(VK_SHADER_STAGE_FRAGMENT_BIT)
+                .set_src_from_file("../examples/compute_cellular_automata/cell.frag.spv")
+                .init(app.renderer()))
+            .init(app.renderer());
+
     g_app::CommandBuffer command_buffers[g_app::VulkanRenderer::MAX_FRAMES_IN_FLIGHT] = {};
     for(auto & command_buffer : command_buffers){
         command_buffer = g_app::CommandBuffer(app.renderer());
     }
 
 
-    app.main_loop([&](const g_app::Time& time){
+    app.main_loop([&](const std::vector<g_app::Event>& events, const g_app::Time& time){
         if(!app.renderer().acquire_next_swapchain_image()) return;
 
         command_buffers[app.renderer().current_frame()]
                 .begin()
 
+                .bind_pipeline(comp_pipeline, VK_PIPELINE_BIND_POINT_COMPUTE)
+                .bind_descriptor_sets(comp_pipeline, VK_PIPELINE_BIND_POINT_COMPUTE, {comp_set})
+                .dispatch(256/GRID_SIZE_X, 256/GRID_SIZE_Y, 1)
+                .pipeline_barrier(g_app::PipelineBarrierInfoBuilder()
+                    .set_stage_flags(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT)
+                    .add_buffer_memory_barrier(cell_buffer, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT)
+                    .build())
+
                 .begin_default_render_pass(0.2f, 0.2f, 0.2f, 1.0f)
+
+                .bind_pipeline(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS)
+                .bind_descriptor_sets(pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS, {set})
+                .bind_vertex_buffer(vertex_buffer)
+                .bind_index_buffer(index_buffer, VK_INDEX_TYPE_UINT32)
+                .draw_indexed(6, GRID_SIZE_X*GRID_SIZE_Y)
+
+                .end_render_pass()
                 .end()
 
-                .submit(g_app::Queue::GRAPHICS,
+                .submit(g_app::Queue::GRAPHICS, {
                         {app.renderer().current_image_available_semaphore()}, {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
                         {app.renderer().current_render_finished_semaphore()},
-                        app.renderer().current_in_flight_fence());
+                        app.renderer().current_in_flight_fence()});
         app.renderer().present();
     });
 

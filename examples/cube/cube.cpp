@@ -129,7 +129,7 @@ int main(){
             index_buffer)
         .submit(Queue::TRANSFER);
 
-    Pipeline::RasterizationInfo rasterization_info = {};
+    RasterizationInfo rasterization_info = {};
     rasterization_info.cull_mode = VK_CULL_MODE_BACK_BIT;
 
     auto pipeline_cache = PipelineCache::load(app.renderer(), "cube_pipeline.cache");

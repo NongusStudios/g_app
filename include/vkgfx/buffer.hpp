@@ -55,6 +55,7 @@ namespace g_app {
         VkBuffer vk_buffer() const { return self->buffer; }
         VmaAllocation vma_allocation() const { return self->allocation; }
         size_t size() const { return self->size; }
+        size_t sizeb() const { return self->size * sizeof(T); }
     private:
         struct Config {
             VkBufferUsageFlags usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
