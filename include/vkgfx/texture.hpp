@@ -96,19 +96,31 @@ namespace g_app {
 
                 CommandBuffer(renderer)
                         .begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT)
-                        .transition_image_layout(image,
+                        /*.transition_image_layout(image,
                              VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                              {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
                              0, VK_ACCESS_TRANSFER_WRITE_BIT,
                              VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                             VK_PIPELINE_STAGE_TRANSFER_BIT)
+                             VK_PIPELINE_STAGE_TRANSFER_BIT)*/
+                        .pipeline_barrier(PipelineBarrierInfoBuilder()
+                            .set_stage_flags(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT)
+                            .add_image_memory_barrier(image, 0, VK_ACCESS_TRANSFER_WRITE_BIT,
+                                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1})
+                                .build())
                         .copy_buffer_to_image(staging_buffer, image, VK_IMAGE_ASPECT_COLOR_BIT)
-                        .transition_image_layout(image,
+                        /*.transition_image_layout(image,
                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                              {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
                              VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
                              VK_PIPELINE_STAGE_TRANSFER_BIT,
-                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)*/
+                        .pipeline_barrier(PipelineBarrierInfoBuilder()
+                              .set_stage_flags(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+                              .add_image_memory_barrier(image, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+                                  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                  {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1})
+                              .build())
                         .submit(Queue::TRANSFER);
             }
 

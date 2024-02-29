@@ -45,6 +45,75 @@ namespace g_app {
         VkFence fence = VK_NULL_HANDLE;
     };
 
+    struct PipelineBarrierInfo {
+        VkPipelineStageFlags src_stage, dst_stage;
+        VkDependencyFlags flags = 0;
+        std::vector<VkMemoryBarrier> memory_barriers;
+        std::vector<VkBufferMemoryBarrier> buffer_barriers;
+        std::vector<VkImageMemoryBarrier> image_barriers;
+    };
+
+    class PipelineBarrierInfoBuilder {
+    public:
+        PipelineBarrierInfoBuilder() = default;
+
+        PipelineBarrierInfoBuilder& set_stage_flags(VkPipelineStageFlags src, VkPipelineStageFlags dst){
+            m_info.src_stage = src;
+            m_info.dst_stage = dst;
+            return *this;
+        }
+
+        PipelineBarrierInfoBuilder& set_dependency_flags(VkDependencyFlags flags){
+            m_info.flags = flags;
+            return *this;
+        }
+
+        PipelineBarrierInfoBuilder& add_memory_barrier(VkAccessFlags src_access, VkAccessFlags dst_access){
+            VkMemoryBarrier b = {VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+            b.srcAccessMask = src_access;
+            b.dstAccessMask = dst_access;
+            m_info.memory_barriers.push_back(b);
+            return *this;
+        }
+
+        template<typename T>
+        PipelineBarrierInfoBuilder& add_buffer_memory_barrier(const Buffer<T>& buffer,
+                                                              VkAccessFlags src_access, VkAccessFlags dst_access, VkDeviceSize offset=0){
+            VkBufferMemoryBarrier b = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
+            b.size = buffer.sizeb();
+            b.offset = offset;
+            b.srcAccessMask = src_access;
+            b.dstAccessMask = dst_access;
+            b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            b.buffer = buffer.vk_buffer();
+            m_info.buffer_barriers.push_back(b);
+            return *this;
+        }
+
+        PipelineBarrierInfoBuilder& add_image_memory_barrier(const Image& image,
+                                                             VkAccessFlags src_access, VkAccessFlags dst_access,
+                                                             VkImageLayout old_layout, VkImageLayout new_layout,
+                                                             VkImageSubresourceRange subresource_range){
+            VkImageMemoryBarrier b = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            b.srcAccessMask = src_access;
+            b.dstAccessMask = dst_access;
+            b.oldLayout = old_layout;
+            b.newLayout = new_layout;
+            b.subresourceRange = subresource_range;
+            b.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            b.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            b.image =  image.vk_image();
+            m_info.image_barriers.push_back(b);
+            return *this;
+        }
+
+        PipelineBarrierInfo build() { return m_info; }
+
+    private:
+        PipelineBarrierInfo m_info = {};
+    };
+
     class CommandBuffer {
     public:
         CommandBuffer() = default;
@@ -158,7 +227,7 @@ namespace g_app {
             return *this;
         }
 
-        CommandBuffer& transition_image_layout(const Image& image, VkImageLayout old_layout, VkImageLayout new_layout,
+        /*CommandBuffer& transition_image_layout(const Image& image, VkImageLayout old_layout, VkImageLayout new_layout,
                                                VkImageSubresourceRange subresource_range,
                                                VkAccessFlags src_access, VkAccessFlags dst_access,
                                                VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage){
@@ -182,7 +251,7 @@ namespace g_app {
                                  1, &barrier);
 
             return *this;
-        }
+        }*/
 
         CommandBuffer& draw_imgui(){
             assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
@@ -311,6 +380,22 @@ namespace g_app {
             assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
             vkCmdDrawIndexed(self->cmdbuf, index_count, instance_count,
                              first_index, vertex_offset, first_instance);
+            return *this;
+        }
+
+        CommandBuffer& dispatch(uint32_t x, uint32_t y, uint32_t z){
+            assert(self->recording && "Commands can't be  called without first calling begin()!");
+            vkCmdDispatch(self->cmdbuf, x, y, z);
+
+            return *this;
+        }
+
+        CommandBuffer& pipeline_barrier(const PipelineBarrierInfo& info){
+            assert(self->recording && "Commands can't be  called without first calling begin()!");
+            vkCmdPipelineBarrier(self->cmdbuf, info.src_stage, info.dst_stage, info.flags,
+                                 info.memory_barriers.size(), info.memory_barriers.data(),
+                                 info.buffer_barriers.size(), info.buffer_barriers.data(),
+                                 info.image_barriers.size(), info.image_barriers.data());
             return *this;
         }
 

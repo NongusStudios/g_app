@@ -1,6 +1,9 @@
 /build
 /build-release
 /cmake-build-debug-mingw
+/cmake-build-debug
 /bin
 *.spv
 *.cache
+/.idea
+/.vscode
