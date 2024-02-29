@@ -46,7 +46,6 @@
 #include "window.hpp"
 #include "vkgfx/all.hpp"
 
-
 namespace g_app {
     struct Time {
         static constexpr double MAX_DELTA = 0.032f;

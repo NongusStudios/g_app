@@ -189,7 +189,6 @@ int main(){
                 init.set_enabled_layers({"VK_LAYER_KHRONOS_validation"});
             }).init();
 
-
     auto render_texture = RenderTexture(app.renderer());
 
     Vertex vertices[] = {

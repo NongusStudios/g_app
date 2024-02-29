@@ -129,13 +129,12 @@ int main(){
             index_buffer)
         .submit(Queue::TRANSFER);
 
-    Pipeline::RasterizationInfo rasterization_info = {};
-    rasterization_info.cull_mode = VK_CULL_MODE_BACK_BIT;
-
     auto pipeline_cache = PipelineCache::load(app.renderer(), "cube_pipeline.cache");
     auto pipeline = GraphicsPipelineInit()
             .set_label("Cube Pipeline")
-            .set_rasterization_info(rasterization_info)
+            .set_rasterization_info(RasterizationInfoBuilder()
+                .set_cull_mode(VK_CULL_MODE_BACK_BIT)
+                .build())
             .add_descriptor_set_layout(descriptor_set_layout)
             .add_vertex_binding(VertexBindingBuilder(sizeof(Vertex))
                 .add_vertex_attribute(VK_FORMAT_R32G32B32_SFLOAT, 0)
