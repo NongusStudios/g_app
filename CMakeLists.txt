@@ -32,6 +32,7 @@ include_directories(
         external/spdlog/include
         external/imgui
         external/stb_image
+        external/miniaudio
         include
         ${VULKANSDK_INC}
 )
@@ -61,9 +62,12 @@ add_library(g_app
         include/vkgfx/pipeline_cache.hpp
         src/vkgfx/pipeline_cache.cpp
         include/vkgfx/framebuffer.hpp
-        src/vkgfx/framebuffer.cpp)
+        src/vkgfx/framebuffer.cpp
+        include/audio.hpp
+        external/miniaudio/miniaudio.cpp
+        src/audio.cpp)
 
-set(BUILD_EXAMPLES ON)
+set(BUILD_EXAMPLES OFF)
 
 if(${BUILD_EXAMPLES})
     add_subdirectory(examples)
