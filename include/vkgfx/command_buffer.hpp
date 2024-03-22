@@ -366,6 +366,7 @@ namespace g_app {
         CommandBuffer& next_subpass(VkSubpassContents contents=VK_SUBPASS_CONTENTS_INLINE){
             assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
             vkCmdNextSubpass(self->cmdbuf, contents);
+            return *this;
         }
 
         CommandBuffer& draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex=0, uint32_t first_instance=0){
