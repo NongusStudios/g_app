@@ -272,5 +272,4 @@ namespace g_app {
     private:
         VulkanRenderer::Config m_config;
     };
-
 } // g_app

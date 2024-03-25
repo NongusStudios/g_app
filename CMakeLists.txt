@@ -23,6 +23,7 @@ add_library(imgui
 )
 
 set(PATH_TO_VULKANSDK C:/VulkanSDK/1.3.275.0)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(VULKANSDK_INC ${PATH_TO_VULKANSDK}/Include)
 set(VULKANSDK_LIB ${PATH_TO_VULKANSDK}/Lib/vulkan-1.lib)
 
@@ -37,32 +38,11 @@ include_directories(
         ${VULKANSDK_INC}
 )
 
+file(GLOB SRC include/*.hpp include/**/*.hpp src/*.cpp src/**/*.cpp)
 add_library(g_app
-        src/g_app.cpp
-        include/g_app.hpp
-        include/types.hpp
+        ${SRC}
         src/vma.cpp
-        src/window.cpp
-        include/window.hpp
-        src/vkgfx/renderer.cpp
-        include/vkgfx/renderer.hpp
-        include/vkgfx/buffer.hpp
-        include/vkgfx/all.hpp
-        src/vkgfx/pipeline.cpp
-        include/vkgfx/pipeline.hpp
-        include/vkgfx/command_buffer.hpp
-        include/vkgfx/image.hpp
-        src/vkgfx/image.cpp
-        include/vkgfx/render_pass.hpp
-        src/vkgfx/render_pass.cpp
-        include/vkgfx/descriptor.hpp
-        src/vkgfx/descriptor.cpp
         external/stb_image/stb_image.cpp
-        include/vkgfx/texture.hpp
-        include/vkgfx/pipeline_cache.hpp
-        src/vkgfx/pipeline_cache.cpp
-        include/vkgfx/framebuffer.hpp
-        src/vkgfx/framebuffer.cpp
         include/audio.hpp
         external/miniaudio/miniaudio.cpp
         src/audio.cpp)

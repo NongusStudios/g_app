@@ -2,8 +2,8 @@
 // Created by jandr on 20/11/2023.
 //
 #include <g_app.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "../glm/glm/glm.hpp"
+#include "../glm/glm/gtc/matrix_transform.hpp"
 
 using namespace g_app;
 

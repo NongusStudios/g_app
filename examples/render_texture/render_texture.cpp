@@ -233,7 +233,7 @@ int main(){
         for(const auto& event : events){
             switch(event.type){
                 case EventType::KEY:
-                    if(event.key.key == GLFW_KEY_ESCAPE && event.key.action == GLFW_PRESS) app.window().quit();
+                    if(event.key.key == Key::ESCAPE && event.key.action == Action::PRESS) app.window().quit();
                     break;
                 default:
                     break;

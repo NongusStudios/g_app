@@ -98,8 +98,8 @@ namespace g_app {
     };
 
     struct KeyEvent {
-        int key;
-        int action;
+        Key key;
+        Action action;
         Mods mods;
     };
     struct CharEvent {
@@ -113,8 +113,8 @@ namespace g_app {
         bool entered;
     };
     struct MButtonEvent {
-        int button;
-        int action;
+        MouseButton button;
+        Action action;
         Mods mods;
     };
     struct ScrollEvent {
@@ -204,39 +204,39 @@ namespace g_app {
             return {static_cast<float>(curpos.xpos), static_cast<float>(curpos.ypos)};
         }
 
-        int key(int key) const {
-            return glfwGetKey(m_window, key);
+        Action key(Key key) const {
+            return Action(glfwGetKey(m_window, int(key)));
         }
-        int button(int button) const {
-            return glfwGetMouseButton(m_window, button);
+        Action button(MouseButton button) const {
+            return Action(glfwGetMouseButton(m_window, int(button)));
         }
 
         bool lctrl() const {
-            return key(GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
+            return key(Key::LCTRL) == Action::PRESS;
         }
         bool rctrl() const {
-            return key(GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+            return key(Key::RCTRL) == Action::PRESS;
         }
 
         bool lshift() const {
-            return key(GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+            return key(Key::LSHIFT) == Action::PRESS;
         }
         bool rshift() const {
-            return key(GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+            return key(Key::RSHIFT) == Action::PRESS;
         }
 
         bool lalt() const {
-            return key(GLFW_KEY_LEFT_ALT) == GLFW_PRESS;
+            return key(Key::LALT) == Action::PRESS;
         }
         bool ralt() const {
-            return key(GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+            return key(Key::RALT) == Action::PRESS;
         }
 
         bool lsuper() const {
-            return key(GLFW_KEY_LEFT_SUPER) == GLFW_PRESS;
+            return key(Key::LSUPER) == Action::PRESS;
         }
         bool rsuper() const {
-            return key(GLFW_KEY_RIGHT_SUPER) == GLFW_PRESS;
+            return key(Key::RSUPER) == Action::PRESS;
         }
 
         Mods mods() const {

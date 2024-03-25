@@ -36,13 +36,14 @@
 #include "descriptor.hpp"
 #include "image.hpp"
 #include "framebuffer.hpp"
+#include "sync.hpp"
 
 namespace g_app {
     struct SubmitSyncObjects {
-        std::vector<VkSemaphore> wait = {};
+        std::vector<Semaphore> wait = {};
         std::vector<VkPipelineStageFlags> wait_stages = {};
-        std::vector<VkSemaphore> signal = {};
-        VkFence fence = VK_NULL_HANDLE;
+        std::vector<Semaphore> signal = {};
+        Fence fence;
     };
 
     struct PipelineBarrierInfo {
@@ -166,17 +167,25 @@ namespace g_app {
         void submit(Queue queue, const SubmitSyncObjects& sync = {}){
             if(self->in_render_pass) end_render_pass();
             if(self->recording) end();
+            
+            std::vector<VkSemaphore> wait = {};
+            std::vector<VkSemaphore> signal = {};
+            wait.reserve(sync.wait.size());
+            signal.reserve(sync.signal.size());
+
+            for(const auto& sem : sync.wait) { wait.push_back(sem.vk_semaphore()); }
+            for(const auto& sem : sync.signal) { signal.push_back(sem.vk_semaphore()); }
 
             VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &self->cmdbuf;
             submit_info.waitSemaphoreCount = sync.wait.size();
-            submit_info.pWaitSemaphores = sync.wait.data();
+            submit_info.pWaitSemaphores = wait.data();
             submit_info.pWaitDstStageMask = sync.wait_stages.data();
             submit_info.signalSemaphoreCount = sync.signal.size();
-            submit_info.pSignalSemaphores = sync.signal.data();
+            submit_info.pSignalSemaphores = signal.data();
 
-            vkQueueSubmit(self->renderer.get_queue(queue), 1, &submit_info, sync.fence);
+            vkQueueSubmit(self->renderer.get_queue(queue), 1, &submit_info, sync.fence.vk_fence());
             vkQueueWaitIdle(self->renderer.get_queue(queue));
 
             vkResetCommandBuffer(self->cmdbuf, 0);

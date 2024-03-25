@@ -67,7 +67,7 @@ int main() {
         command_buffer = g_app::CommandBuffer(app.renderer());
     }
 
-    app.main_loop([&](const g_app::Time &time) {
+    app.main_loop([&](const std::vector<g_app::Event>& events, const g_app::Time &time) {
         if (!app.renderer().acquire_next_swapchain_image()) return;
 
         command_buffers[app.renderer().current_frame()]

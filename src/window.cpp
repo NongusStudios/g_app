@@ -154,8 +154,8 @@ namespace g_app {
 
     void Window::key_callback(int key, int scancode, int action, int mods){
         Event e = {EventType::KEY};
-        e.key.key = key;
-        e.key.action = action;
+        e.key.key = Key(key);
+        e.key.action = Action(action);
         e.key.mods = glfw_mods2mods(mods);
         m_current_events.push_back(e);
     }
@@ -177,8 +177,8 @@ namespace g_app {
     }
     void Window::mbutton_callback(int button, int action, int mods){
         Event e = {EventType::MBUTTON};
-        e.mbutton.button = button;
-        e.mbutton.action = action;
+        e.mbutton.button = MouseButton(button);
+        e.mbutton.action = Action(action);
         e.mbutton.mods = glfw_mods2mods(mods);
         m_current_events.push_back(e);
     }
