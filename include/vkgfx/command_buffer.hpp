@@ -38,6 +38,8 @@
 #include "framebuffer.hpp"
 #include "sync.hpp"
 
+#include <iostream>
+
 namespace g_app {
     struct SubmitSyncObjects {
         std::vector<Semaphore> wait = {};
