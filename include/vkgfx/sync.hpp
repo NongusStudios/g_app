@@ -47,7 +47,7 @@ namespace g_app {
             }
         }
 
-        VkSemaphore vk_semaphore() const { return self->semaphore; }
+        VkSemaphore vk_semaphore() const { return (self) ? self->semaphore : VK_NULL_HANDLE; }
     private:
         struct Inner {
             ~Inner(){
@@ -81,7 +81,7 @@ namespace g_app {
             }
         }
  
-        VkFence vk_fence() const { return self->fence; }
+        VkFence vk_fence() const { return (self) ? self->fence : VK_NULL_HANDLE; }
     private:
         struct Inner {
             ~Inner(){

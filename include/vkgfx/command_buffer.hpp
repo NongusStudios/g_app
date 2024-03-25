@@ -174,6 +174,7 @@ namespace g_app {
             std::vector<VkSemaphore> signal = {};
             wait.reserve(sync.wait.size());
             signal.reserve(sync.signal.size());
+            
 
             for(const auto& sem : sync.wait) { wait.push_back(sem.vk_semaphore()); }
             for(const auto& sem : sync.signal) { signal.push_back(sem.vk_semaphore()); }
