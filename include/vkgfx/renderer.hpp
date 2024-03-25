@@ -268,7 +268,14 @@ namespace g_app {
             return *this;
         }
 
-        VulkanRenderer init(GLFWwindow* window) const { return {window, m_config}; }
+        VulkanRenderer init(GLFWwindow* window) const {
+            try {
+                return {window, m_config};
+            } catch(const std::runtime_error& e) {
+                spdlog::error(e.what());
+                std::exit(EXIT_FAILURE);
+            }
+        }
     private:
         VulkanRenderer::Config m_config;
     };
