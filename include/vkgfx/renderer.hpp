@@ -181,7 +181,7 @@ namespace g_app {
         }
         VkQueue get_queue(Queue queue) const {
             if(static_cast<size_t>(queue) >= self->queues.size()){
-                return self->queues[static_cast<size_t>(queue) - (static_cast<size_t>(queue) - self->queues.size()) + 1];
+                return self->queues[std::clamp<size_t>(static_cast<size_t>(queue), 0, self->queues.size()-1)];
             }
             return self->queues[static_cast<uint32_t>(queue)];
         }

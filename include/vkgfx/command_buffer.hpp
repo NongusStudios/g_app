@@ -182,10 +182,10 @@ namespace g_app {
             VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
             submit_info.commandBufferCount = 1;
             submit_info.pCommandBuffers = &self->cmdbuf;
-            submit_info.waitSemaphoreCount = sync.wait.size();
+            submit_info.waitSemaphoreCount = wait.size();
             submit_info.pWaitSemaphores = wait.data();
             submit_info.pWaitDstStageMask = sync.wait_stages.data();
-            submit_info.signalSemaphoreCount = sync.signal.size();
+            submit_info.signalSemaphoreCount = signal.size();
             submit_info.pSignalSemaphores = signal.data();
 
             vkQueueSubmit(self->renderer.get_queue(queue), 1, &submit_info, sync.fence.vk_fence());
