@@ -47,7 +47,7 @@ add_library(g_app
         external/miniaudio/miniaudio.cpp
         src/audio.cpp)
 
-set(BUILD_EXAMPLES OFF)
+set(BUILD_EXAMPLES ON)
 
 if(${BUILD_EXAMPLES})
     add_subdirectory(examples)

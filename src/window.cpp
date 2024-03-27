@@ -66,7 +66,7 @@ namespace g_app {
             bool               resizable,
             bool               primary_monitor,
             const std::function<Monitor(std::vector<Monitor>)>& choose_monitor
-    ): m_window{nullptr}, m_monitors{}, m_current_events{} {
+    ): self{std::make_shared<Inner>()}, m_monitors{}, m_current_events{} {
         if(m_instance_exists) {
             spdlog::warn("Trying to create another window, when one already exists!");
             return;
@@ -96,7 +96,7 @@ namespace g_app {
 
         switch(window_mode){
             case WindowMode::WINDOWED:
-                m_window = glfwCreateWindow(
+                self->window = glfwCreateWindow(
                     static_cast<int>(window_extent.width), static_cast<int>(window_extent.height),
                     window_title.c_str(), nullptr, nullptr
                 );
@@ -108,7 +108,7 @@ namespace g_app {
                 glfwWindowHint(GLFW_BLUE_BITS, vidmode->blueBits);
                 glfwWindowHint(GLFW_REFRESH_RATE, vidmode->refreshRate);
 
-                m_window = glfwCreateWindow(
+                self->window = glfwCreateWindow(
                     vidmode->width, vidmode->height,
                     window_title.c_str(), monitor.glfw_monitor(),
                     nullptr
@@ -116,27 +116,27 @@ namespace g_app {
                 break;
             }
             case WindowMode::FULLSCREEN:
-                m_window = glfwCreateWindow(
+                self->window = glfwCreateWindow(
                     static_cast<int>(window_extent.width), static_cast<int>(window_extent.height),
                     window_title.c_str(), monitor.glfw_monitor(), nullptr
                 );
                 break;
         }
 
-        if(m_window == nullptr){
+        if(self->window == nullptr){
             throw std::runtime_error("Window creation failed!");
         }
 
-        glfwSetWindowUserPointer(m_window, this);
+        glfwSetWindowUserPointer(self->window, this);
 
         m_current_events.reserve(M_CURRENT_EVENTS_CAPACITY);
-        glfwSetKeyCallback(m_window, g_key_callback);
-        glfwSetCharCallback(m_window, g_char_callback);
-        glfwSetCursorPosCallback(m_window, g_cursor_position_callback);
-        glfwSetCursorEnterCallback(m_window, g_cursor_enter_callback);
-        glfwSetMouseButtonCallback(m_window, g_mbutton_callback);
-        glfwSetScrollCallback(m_window, g_scroll_callback);
-        glfwSetDropCallback(m_window, g_file_drop_callback);
+        glfwSetKeyCallback(self->window, g_key_callback);
+        glfwSetCharCallback(self->window, g_char_callback);
+        glfwSetCursorPosCallback(self->window, g_cursor_position_callback);
+        glfwSetCursorEnterCallback(self->window, g_cursor_enter_callback);
+        glfwSetMouseButtonCallback(self->window, g_mbutton_callback);
+        glfwSetScrollCallback(self->window, g_scroll_callback);
+        glfwSetDropCallback(self->window, g_file_drop_callback);
 
         m_instance_exists = true;
     }

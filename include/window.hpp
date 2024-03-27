@@ -7,6 +7,7 @@
 #include <string>
 #include <functional>
 #include <cassert>
+#include <memory>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -153,7 +154,7 @@ namespace g_app {
 
     class Window {
     public:
-        Window(): m_window{nullptr}, m_monitors{}, m_current_events{} {}
+        Window(): self{}, m_monitors{}, m_current_events{} {}
 
         Window(
             Extent2D<uint32_t> window_extent,
@@ -165,18 +166,18 @@ namespace g_app {
         );
 
         void set_window_size(const Extent2D<uint32_t>& extent) {
-            glfwSetWindowSize(m_window, static_cast<int>(extent.width), static_cast<int>(extent.height));
+            glfwSetWindowSize(self->window, static_cast<int>(extent.width), static_cast<int>(extent.height));
         }
         void set_window_title(const std::string& title) {
-            glfwSetWindowTitle(m_window, title.c_str());
+            glfwSetWindowTitle(self->window, title.c_str());
         }
 
         void quit(){
-            glfwSetWindowShouldClose(m_window, true);
+            glfwSetWindowShouldClose(self->window, true);
         }
 
         bool is_open() const {
-            return !glfwWindowShouldClose(m_window);
+            return !glfwWindowShouldClose(self->window);
         }
 
         std::vector<Event> poll_events() {
@@ -191,12 +192,12 @@ namespace g_app {
 
         Extent2D<uint32_t> extent() const {
             int width, height;
-            glfwGetFramebufferSize(m_window, &width, &height);
+            glfwGetFramebufferSize(self->window, &width, &height);
             return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
         }
         Pos2D<double> cursor_position() const {
             double xpos, ypos;
-            glfwGetCursorPos(m_window, &xpos, &ypos);
+            glfwGetCursorPos(self->window, &xpos, &ypos);
             return {xpos, ypos};
         }
         Pos2D<float> cursor_positionf() const {
@@ -205,10 +206,10 @@ namespace g_app {
         }
 
         Action key(Key key) const {
-            return Action(glfwGetKey(m_window, int(key)));
+            return Action(glfwGetKey(self->window, int(key)));
         }
         Action button(MouseButton button) const {
-            return Action(glfwGetMouseButton(m_window, int(button)));
+            return Action(glfwGetMouseButton(self->window, int(button)));
         }
 
         bool lctrl() const {
@@ -243,13 +244,22 @@ namespace g_app {
             return {lctrl() || rctrl(), lshift() || rshift(), lalt() || ralt(), lsuper() || rsuper(), false, false };
         }
 
-        GLFWwindow* glfw_window() const { return m_window; }
+        GLFWwindow* glfw_window() const { return self->window; }
 
         static constexpr size_t M_CURRENT_EVENTS_CAPACITY = 128;
 
         static bool m_instance_exists;
     private:
-        GLFWwindow* m_window;
+        struct Inner {
+            ~Inner(){
+                glfwDestroyWindow(window);
+                glfwTerminate();
+            }
+
+            GLFWwindow* window;
+        };
+        std::shared_ptr<Inner> self;        
+
         std::vector<Monitor> m_monitors;
         std::vector<Event> m_current_events;
 

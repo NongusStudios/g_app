@@ -66,16 +66,13 @@ namespace g_app {
 
     class App {
     public:
-        Window& window() {
-            return m_window;
-        }
-        const Window& window() const {
+        Window window() {
             return m_window;
         }
         Time time() const {
             return m_time;
         }
-        VulkanRenderer& renderer() {
+        VulkanRenderer renderer() {
             return m_renderer;
         }
 
