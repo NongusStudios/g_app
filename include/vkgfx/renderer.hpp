@@ -163,7 +163,7 @@ namespace g_app {
             ImGui_ImplVulkan_RenderDrawData(draw_data, cmd);
         }
 
-        VkFormat choosen_swapchain_format() const { return self->swapchain.format; }
+        VkFormat chosen_swapchain_format() const { return self->swapchain.format; }
 
         uint32_t current_frame() const { return self->current_frame; }
         uint32_t current_image() const { return self->current_image; }
