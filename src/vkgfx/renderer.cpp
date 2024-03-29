@@ -43,6 +43,7 @@ namespace g_app {
         init_surface();
         pick_physical_device(config);
         init_device(config);
+        load_extensions(config);
         init_allocator(config);
         init_command_pool();
         init_swapchain(VK_NULL_HANDLE);
@@ -323,6 +324,13 @@ namespace g_app {
         }
 
         self->queue_family_info = queue_family.value();
+    }
+
+    
+    void VulkanRenderer::load_extensions(const VulkanRenderer::Config& config){
+        for(auto& pfn : config.pfnload){
+            self->ext_pfn[pfn] = vkGetDeviceProcAddr(self->device, pfn);
+        }
     }
 
     void VulkanRenderer::init_allocator(const VulkanRenderer::Config &config) {

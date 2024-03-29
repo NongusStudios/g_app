@@ -39,6 +39,7 @@ include_directories(
 )
 
 file(GLOB SRC include/*.hpp include/**/*.hpp src/*.cpp src/**/*.cpp)
+set(CMAKE_CONFIGURE_DEPENDS ${SRC})
 add_library(g_app
         ${SRC}
         src/vma.cpp
@@ -47,7 +48,7 @@ add_library(g_app
         external/miniaudio/miniaudio.cpp
         src/audio.cpp)
 
-set(BUILD_EXAMPLES OFF)
+    set(BUILD_EXAMPLES ON)
 
 if(${BUILD_EXAMPLES})
     add_subdirectory(examples)

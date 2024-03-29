@@ -42,7 +42,7 @@ namespace g_app {
     public:
         DescriptorSetLayout() = default;
 
-        VkDescriptorSetLayout vk_descriptor_set_layout() const { return self->layout; }
+        VkDescriptorSetLayout vk_descriptor_set_layout() const { return (self) ? self->layout : VK_NULL_HANDLE; }
     private:
         struct Config {
             std::vector<VkDescriptorSetLayoutBinding> bindings = {};
@@ -112,7 +112,7 @@ namespace g_app {
     public:
         DescriptorSet() = default;
 
-        VkDescriptorSet vk_descriptor_set() const { return self->set; }
+        VkDescriptorSet vk_descriptor_set() const { return (self) ? self->set : VK_NULL_HANDLE; }
 
     private:
         struct Inner {
@@ -132,7 +132,7 @@ namespace g_app {
     public:
         DescriptorPool() = default;
 
-        VkDescriptorPool vk_descriptor_pool() const { return self->pool; }
+        VkDescriptorPool vk_descriptor_pool() const { return (self) ? self->pool : VK_NULL_HANDLE; }
 
         DescriptorSet allocate_set(const DescriptorSetLayout& layout){
             try {
@@ -239,7 +239,7 @@ namespace g_app {
     private:
         DescriptorPool::Config m_config = {};
     };
-
+    
     class DescriptorWriter {
     public:
         DescriptorWriter() = default;
@@ -247,7 +247,7 @@ namespace g_app {
         template<typename T>
         DescriptorWriter& write_buffer(const DescriptorSet& dst, uint32_t binding, VkDescriptorType type,
                                        const Buffer<T>& buffer, VkDeviceSize offset=0){
-            m_buffer_infos.push_back(std::make_unique<VkDescriptorBufferInfo>());
+            m_buffer_infos.push_back(std::make_shared<VkDescriptorBufferInfo>());
             auto& info = m_buffer_infos[m_buffer_infos.size()-1];
             info->buffer = buffer.vk_buffer();
             info->offset = offset;
@@ -269,7 +269,7 @@ namespace g_app {
         DescriptorWriter& write_image(
                 const DescriptorSet& dst, uint32_t binding, VkDescriptorType type,
                 const ImageView& image_view, const Sampler& sampler, VkImageLayout layout){
-            m_image_infos.push_back(std::make_unique<VkDescriptorImageInfo>());
+            m_image_infos.push_back(std::make_shared<VkDescriptorImageInfo>());
             auto& info = m_image_infos[m_image_infos.size()-1];
             info->imageView = image_view.vk_image_view();
             info->sampler = sampler.vk_sampler();
@@ -308,10 +308,14 @@ namespace g_app {
                     renderer.inner()->device, m_writes.size(), m_writes.data(),
                     m_copies.size(), m_copies.data());
         }
+        
+        std::vector<VkWriteDescriptorSet>& get_writes(){ return m_writes; }
     private:
-        std::vector<std::unique_ptr<VkDescriptorBufferInfo>> m_buffer_infos = {};
-        std::vector<std::unique_ptr<VkDescriptorImageInfo>> m_image_infos = {};
+        std::vector<std::shared_ptr<VkDescriptorBufferInfo>> m_buffer_infos = {};
+        std::vector<std::shared_ptr<VkDescriptorImageInfo>> m_image_infos = {};
         std::vector<VkWriteDescriptorSet> m_writes = {};
         std::vector<VkCopyDescriptorSet> m_copies = {};
     };
+
+
 }

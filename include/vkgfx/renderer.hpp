@@ -113,6 +113,7 @@ namespace g_app {
             std::vector<VkFence> in_flight_fences = {};
             VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
             bool cleanup_imgui = false;
+            std::unordered_map<std::string, PFN_vkVoidFunction> ext_pfn = {};
 
             uint32_t current_frame = 0;
             uint32_t current_image = 0;
@@ -148,6 +149,12 @@ namespace g_app {
         bool acquire_next_swapchain_image();
         void begin_default_render_pass(VkCommandBuffer cmd, float r, float g, float b, float a);
         void present();
+        
+        template<typename T>
+        T get_extpfn(const std::string& name){
+            assert(self->ext_pfn.contains(name));
+            return reinterpret_cast<T>(self->ext_pfn[name]);
+        }
 
         ImGuiIO& init_imgui();
         void render_imgui(VkCommandBuffer cmd){
@@ -204,6 +211,7 @@ namespace g_app {
             std::vector<const char*> enabled_device_extensions = {};
             VkPhysicalDeviceFeatures enabled_features = {};
             uint32_t    frame_rate_limit = 0; // Leave 0 for unlimited
+            std::vector<const char*> pfnload = {};
         };
 
         /* All vulkan object abstractions are contained within a shared_ptr to allow for easy copying without worrying about
@@ -215,6 +223,7 @@ namespace g_app {
         void init_surface();
         void pick_physical_device(const VulkanRenderer::Config &config);
         void init_device(const Config& config);
+        void load_extensions(const Config& config);
         void init_allocator(const Config& config);
         void init_command_pool();
         void init_swapchain(VkSwapchainKHR old_swapchain=VK_NULL_HANDLE);
@@ -265,6 +274,10 @@ namespace g_app {
         }
         VulkanRendererInit& set_frame_rate_limit(uint32_t limit){
             m_config.frame_rate_limit = limit;
+            return *this;
+        }
+        VulkanRendererInit& load_vkpfn(const std::vector<const char*>& names){
+            m_config.pfnload = names;
             return *this;
         }
 

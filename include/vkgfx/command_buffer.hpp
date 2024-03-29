@@ -375,6 +375,15 @@ namespace g_app {
             return *this;
         }
 
+        // If VK_KHR_push_descriptor is enabled
+        CommandBuffer& ext_push_descriptor_set(const Pipeline& pipeline, VkPipelineBindPoint bind_point, uint32_t set,
+                                               const std::vector<VkWriteDescriptorSet>& writes){
+            auto push_descriptor_set = self->renderer.get_extpfn<PFN_vkCmdPushDescriptorSetKHR>("vkCmdPushDescriptorSetKHR");
+            push_descriptor_set(self->cmdbuf, bind_point, pipeline.vk_pipeline_layout(), set, static_cast<uint32_t>(writes.size()),
+                                writes.data());
+            return *this;
+        }
+
         CommandBuffer& next_subpass(VkSubpassContents contents=VK_SUBPASS_CONTENTS_INLINE){
             assert(self->in_render_pass && "Can't execute render pass dependant commands when no render pass has begun!");
             vkCmdNextSubpass(self->cmdbuf, contents);
