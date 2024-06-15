@@ -71,6 +71,8 @@ namespace g_app {
     bool is_instance_extensions_supported(const std::vector<const char*>& extensions){
         uint32_t all_extension_count = 0;
         vkEnumerateInstanceExtensionProperties(nullptr, &all_extension_count, nullptr);
+        if(all_extension_count == 0) return false;
+
         std::vector<VkExtensionProperties> all_extension_properties(all_extension_count);
         vkEnumerateInstanceExtensionProperties(nullptr, &all_extension_count, all_extension_properties.data());
 
