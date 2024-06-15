@@ -611,7 +611,6 @@ namespace g_app {
 
     void VulkanRenderer::init_framebuffers() {
         auto details = get_swapchain_support_details(self->physical_device, self->surface);
-        VkExtent2D selected_extent = select_swapchain_extent(details.capabilities, self->window);
 
         self->swapchain.framebuffers.resize(self->swapchain.images.size());
 
@@ -626,8 +625,8 @@ namespace g_app {
             create_info.attachmentCount = attachment_count;
             create_info.pAttachments = attachments;
             create_info.renderPass = self->default_render_pass;
-            create_info.width = selected_extent.width;
-            create_info.height = selected_extent.height;
+            create_info.width = self->swapchain.extent.width;
+            create_info.height = self->swapchain.extent.height;
             create_info.layers = 1;
 
             VkResult result = VK_SUCCESS;

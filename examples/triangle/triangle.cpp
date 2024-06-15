@@ -19,6 +19,7 @@ void draw_ui(float x, float y){
     ImGui::Text("%f, %f", x, y);
 
     ImGui::End();
+    ImGui::Render();
 }
 
 int main(){

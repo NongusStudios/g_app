@@ -158,7 +158,6 @@ namespace g_app {
 
         ImGuiIO& init_imgui();
         void render_imgui(VkCommandBuffer cmd){
-            ImGui::Render();
             ImDrawData* draw_data = ImGui::GetDrawData();
             ImGui_ImplVulkan_RenderDrawData(draw_data, cmd);
         }

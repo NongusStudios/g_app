@@ -181,6 +181,7 @@ int main(){
 
         ImGui::SliderFloat("Scale", &scale, 0.1f, 10.0f);
         ImGui::End();
+        ImGui::Render();
 
         auto window_extent = app.window().extent();
         transform.projection = glm::perspective(45.0f, float(window_extent.width)/float(window_extent.height), 0.1f, 100.0f);
