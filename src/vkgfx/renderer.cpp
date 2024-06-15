@@ -759,7 +759,8 @@ namespace g_app {
         init_info.MinImageCount = self->swapchain.min_image_count;
         init_info.ImageCount = self->swapchain.images.size();
         init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        ImGui_ImplVulkan_Init(&init_info, self->default_render_pass);
+        init_info.RenderPass = self->default_render_pass;
+        ImGui_ImplVulkan_Init(&init_info);
 
         self->cleanup_imgui = true;
         return io;
