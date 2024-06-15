@@ -1,8 +1,0 @@
-/home/joel/Projects/g_app/examples/build/CMakeFiles/cube.dir
-/home/joel/Projects/g_app/examples/build/CMakeFiles/push_descriptors.dir
-/home/joel/Projects/g_app/examples/build/CMakeFiles/render_texture.dir
-/home/joel/Projects/g_app/examples/build/CMakeFiles/textures.dir
-/home/joel/Projects/g_app/examples/build/CMakeFiles/triangle.dir
-/home/joel/Projects/g_app/examples/build/CMakeFiles/shaders.dir
-/home/joel/Projects/g_app/examples/build/CMakeFiles/edit_cache.dir
-/home/joel/Projects/g_app/examples/build/CMakeFiles/rebuild_cache.dir
