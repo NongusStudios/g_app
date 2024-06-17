@@ -168,9 +168,10 @@ namespace g_app {
         VertexBufferBindings() = default;
 
         template<typename T>
-        void add_buffer(const Buffer<T>& buffer, VkDeviceSize offset=0){
+        VertexBufferBindings& add_buffer(const Buffer<T>& buffer, VkDeviceSize offset=0){
             m_buffers.push_back(buffer.vk_buffer());
             m_offsets.push_back(offset * sizeof(T));
+            return *this;
         }
 
         std::vector<VkBuffer>& buffers() { return m_buffers; }
