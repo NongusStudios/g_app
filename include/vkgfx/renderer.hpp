@@ -163,6 +163,7 @@ namespace g_app {
         }
 
         VkFormat chosen_swapchain_format() const { return self->swapchain.format; }
+        VkExtent2D swapchain_extent() const { return self->swapchain.extent; }
 
         uint32_t current_frame() const { return self->current_frame; }
         uint32_t current_image() const { return self->current_image; }
