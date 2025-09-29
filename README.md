@@ -1,5 +1,5 @@
 # g_app
-Relatively simple cross-platform Vulkan wrapper and windowing library.
+Cross-platform Vulkan wrapper and windowing library.
 
 ## Dependencies
  - GLFW for windowing
